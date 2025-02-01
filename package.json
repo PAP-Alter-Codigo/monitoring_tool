@@ -1,4 +1,12 @@
 {
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.637.0",
+    "aws-sdk": "^2.1684.0",
+    "csv-parser": "^3.0.0"
+  }
+}
+
+{
   "name": "monitoring_tool",
   "version": "1.0.0",
   "main": "config.js",
