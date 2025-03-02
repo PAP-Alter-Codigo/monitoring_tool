@@ -1,4 +1,4 @@
-const Actors = require('../models/actors.js');
+const Actors = require('../models/actor.js');
 
 const getAll = async (req, res) => {
   try {

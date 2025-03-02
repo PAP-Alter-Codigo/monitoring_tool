@@ -2,11 +2,11 @@ const { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand, Delet
 const config = require('../config');
 
 const client = new DynamoDBClient({
-  region: config.AWS_REGION,
-  credentials: {
+    region: config.AWS_REGION,
+    credentials: {
     accessKeyId: config.AWS_ACCESS_KEY,
     secretAccessKey: config.AWS_SECRET_KEY
-  }
+}
 });
 
 const tableName = 'Locations';
@@ -24,7 +24,7 @@ const getById = async (id) => {
     const params = {
         TableName: tableName,
         Key: {
-            "_id location": { N: id.toString() }
+            "_idLocation": { N: id.toString() }
         }
     };
     const command = new GetItemCommand(params);
@@ -45,12 +45,12 @@ const update = async (id, location) => {
     const params = {
         TableName: tableName,
         Key: {
-            "_id location": { N: id.toString() }
+            "_idLocation": { N: id.toString() }
         },
         UpdateExpression: 'SET #name = :name, #description = :description',
         ExpressionAttributeNames: {
             '#name': 'name',
-            '#geolocation': 'golocation',
+            '#geolocation': 'geolocation',
         },
         ExpressionAttributeValues: {
             ':name': { S: location.name },
@@ -65,7 +65,7 @@ const remove = async (id) => {
     const params = {
         TableName: tableName,
         Key: {
-            "_id location": { N: id.toString() }
+            "_idLocation": { N: id.toString() }
         }
     };
     const command = new DeleteItemCommand(params);
