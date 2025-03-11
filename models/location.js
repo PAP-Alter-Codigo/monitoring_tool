@@ -9,11 +9,11 @@ const client = new DynamoDBClient({
 }
 });
 
-const tableName = 'Locations';
+const LOCATION = 'Location';
 
 const getAll = async () => {
     const params = {
-        TableName: tableName
+        TableName: LOCATION
     };
     const command = new ScanCommand(params);
     const data = await client.send(command);
@@ -22,7 +22,7 @@ const getAll = async () => {
 
 const getById = async (id) => {
     const params = {
-        TableName: tableName,
+        TableName: LOCATION,
         Key: {
             "_idLocation": { N: id.toString() }
         }
@@ -34,7 +34,7 @@ const getById = async (id) => {
 
 const create = async (location) => {
     const params = {
-        TableName: tableName,
+        TableName: LOCATION,
         Item: location
     };
     const command = new PutItemCommand(params);
@@ -63,7 +63,7 @@ const update = async (id, location) => {
 
 const remove = async (id) => {
     const params = {
-        TableName: tableName,
+        TableName: LOCATION,
         Key: {
             "_idLocation": { N: id.toString() }
         }

@@ -9,11 +9,11 @@ const client = new DynamoDBClient({
   }
 });
 
-const tableName = 'Articles';
+const ARTICLE = 'Articles';
 
 const getAll = async () => {
   const params = {
-    TableName: tableName
+    TableName: ARTICLE
   };
   const command = new ScanCommand(params);
   const data = await client.send(command);
@@ -22,7 +22,7 @@ const getAll = async () => {
 
 const getById = async (id) => {
   const params = {
-    TableName: tableName,
+    TableName: ARTICLE,
     Key: {
       _articleId: { N: id.toString() }
     }
@@ -34,7 +34,7 @@ const getById = async (id) => {
 
 const create = async (article) => {
   const params = {
-    TableName: tableName,
+    TableName: ARTICLE,
     Item: article
   };
   const command = new PutItemCommand(params);
@@ -43,7 +43,7 @@ const create = async (article) => {
 
 const update = async (id, article) => {
   const params = {
-    TableName: tableName,
+    TableName: ARTICLE,
     Key: {
       _articleId: { N: id.toString() }
     },
@@ -71,7 +71,7 @@ const update = async (id, article) => {
 
 const remove = async (id) => {
   const params = {
-    TableName: tableName,
+    TableName: ARTICLE,
     Key: {
       _articleId: { N: id.toString() }
     }
