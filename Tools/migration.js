@@ -36,7 +36,7 @@ const uploadCSVToDynamoDB = async (csvFilePath) => {
         cleanedRow[cleanedKey] = row[key] || 'N/A'; 
       }
       items.push(cleanedRow);
-  xx  })
+    })
     .on('end', async () => {
       console.log(`CSV file ${csvFilePath} successfully processed`);
       
@@ -62,6 +62,8 @@ const uploadCSVToDynamoDB = async (csvFilePath) => {
           locations[item.location] = locationId;
           locationCounter++;
         }
+        console.log(`--ID generado para location "${item.location}": ${locationId}`);
+
 
         const articleIdNum = parseInt(_articleId, 10);
         const locationIdNum = parseInt(locationId, 10);
@@ -208,5 +210,17 @@ const uploadCSVToDynamoDB = async (csvFilePath) => {
     });
 };
 
-const csvFilePath = '/Users/kalebavila/Documents/PAP_Territorios/Scripts/test.csv';
+
+//const path = require('path');
+//const csvFilePath = path.join(__dirname, 'test.csv');
+//uploadCSVToDynamoDB(csvFilePath);
+
+//const csvFilePath = '/Users/javierfigueroa/Desktop/8vo/01_PAP_Territorios/el_repo/monitoring_tool/Tools';
+//'/Users/kalebavila/Documents/PAP_Territorios/Scripts/test.csv';
+//uploadCSVToDynamoDB(csvFilePath);
+
+const path = require('path');
+const csvFilePath = path.join(__dirname, 'test.csv'); // para construir la ruta correcta al archivo
+console.log(`📌 Usando el archivo CSV en: ${csvFilePath}`); // para verificar si es correcta
+
 uploadCSVToDynamoDB(csvFilePath);

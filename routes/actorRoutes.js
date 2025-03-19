@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const actorsController = require('../controllers/actorsController.js');
+const actorsController = require('../controllers/actorController.js');
 
 router.get('/', actorsController.getAll);
 router.get('/:id', actorsController.getById);

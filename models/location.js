@@ -2,18 +2,18 @@ const { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand, Delet
 const config = require('../config');
 
 const client = new DynamoDBClient({
-  region: config.AWS_REGION,
-  credentials: {
+    region: config.AWS_REGION,
+    credentials: {
     accessKeyId: config.AWS_ACCESS_KEY,
     secretAccessKey: config.AWS_SECRET_KEY
-  }
+}
 });
 
-const tableName = 'Locations';
+const LOCATION = 'Location';
 
 const getAll = async () => {
     const params = {
-        TableName: tableName
+        TableName: LOCATION
     };
     const command = new ScanCommand(params);
     const data = await client.send(command);
@@ -22,9 +22,9 @@ const getAll = async () => {
 
 const getById = async (id) => {
     const params = {
-        TableName: tableName,
+        TableName: LOCATION,
         Key: {
-            "_id location": { N: id.toString() }
+            "_idLocation": { N: id.toString() }
         }
     };
     const command = new GetItemCommand(params);
@@ -34,7 +34,7 @@ const getById = async (id) => {
 
 const create = async (location) => {
     const params = {
-        TableName: tableName,
+        TableName: LOCATION,
         Item: location
     };
     const command = new PutItemCommand(params);
@@ -45,12 +45,12 @@ const update = async (id, location) => {
     const params = {
         TableName: tableName,
         Key: {
-            "_id location": { N: id.toString() }
+            "_idLocation": { N: id.toString() }
         },
         UpdateExpression: 'SET #name = :name, #description = :description',
         ExpressionAttributeNames: {
             '#name': 'name',
-            '#geolocation': 'golocation',
+            '#geolocation': 'geolocation',
         },
         ExpressionAttributeValues: {
             ':name': { S: location.name },
@@ -63,9 +63,9 @@ const update = async (id, location) => {
 
 const remove = async (id) => {
     const params = {
-        TableName: tableName,
+        TableName: LOCATION,
         Key: {
-            "_id location": { N: id.toString() }
+            "_idLocation": { N: id.toString() }
         }
     };
     const command = new DeleteItemCommand(params);

@@ -1,5 +1,6 @@
 const { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } = require('@aws-sdk/client-dynamodb');
 const config = require('../config');
+const { QueryCommand } = require("@aws-sdk/client-dynamodb");
 
 const client = new DynamoDBClient({
   region: config.AWS_REGION,
@@ -9,11 +10,11 @@ const client = new DynamoDBClient({
   }
 });
 
-const tableName = 'Articles';
+const ARTICLE = 'Articles';
 
 const getAll = async () => {
   const params = {
-    TableName: tableName
+    TableName: ARTICLE
   };
   const command = new ScanCommand(params);
   const data = await client.send(command);
@@ -21,20 +22,34 @@ const getAll = async () => {
 };
 
 const getById = async (id) => {
+  const articleIdNum = parseInt(id, 10);
+  if (isNaN(articleIdNum)) {
+    throw new Error(`Invalid article ID: ${id}`);
+  }
+
   const params = {
-    TableName: tableName,
-    Key: {
-      _articleId: { N: id.toString() }
+    TableName: ARTICLE,
+    KeyConditionExpression: "#articleId = :articleId",
+    ExpressionAttributeNames: {
+      "#articleId": "_articleId"
+    },
+    ExpressionAttributeValues: {
+      ":articleId": { N: articleIdNum.toString() }
     }
   };
-  const command = new GetItemCommand(params);
-  const data = await client.send(command);
-  return data.Item;
+
+  try {
+    const command = new QueryCommand(params);
+    const data = await client.send(command);
+    return data.Items.length > 0 ? data.Items[0] : null;
+  } catch (error) {
+    throw error;
+  }
 };
 
 const create = async (article) => {
   const params = {
-    TableName: tableName,
+    TableName: ARTICLE,
     Item: article
   };
   const command = new PutItemCommand(params);
@@ -43,7 +58,7 @@ const create = async (article) => {
 
 const update = async (id, article) => {
   const params = {
-    TableName: tableName,
+    TableName: ARTICLE,
     Key: {
       _articleId: { N: id.toString() }
     },
@@ -71,7 +86,7 @@ const update = async (id, article) => {
 
 const remove = async (id) => {
   const params = {
-    TableName: tableName,
+    TableName: ARTICLE,
     Key: {
       _articleId: { N: id.toString() }
     }

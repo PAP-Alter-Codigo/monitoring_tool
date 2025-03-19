@@ -1,9 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const articlesRoutes = require('./routes/articles');
-const actorsRoutes = require('./routes/actors');
-const tagsRoutes = require('./routes/tags');
-const locationsRoutes = require('./routes/locations');
+
+const articlesRoutes = require('./routes/articleRoutes');
+const actorsRoutes = require('./routes/actorRoutes');
+const tagsRoutes = require('./routes/tagRoutes');
+const locationsRoutes = require('./routes/locationRoutes');
 
 const app = express();
 
