@@ -1,5 +1,6 @@
 const { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } = require('@aws-sdk/client-dynamodb');
 const config = require('../config');
+const { QueryCommand } = require("@aws-sdk/client-dynamodb");
 
 const client = new DynamoDBClient({
   region: config.AWS_REGION,
@@ -21,15 +22,29 @@ const getAll = async () => {
 };
 
 const getById = async (id) => {
+  const articleIdNum = parseInt(id, 10);
+  if (isNaN(articleIdNum)) {
+    throw new Error(`Invalid article ID: ${id}`);
+  }
+
   const params = {
     TableName: ARTICLE,
-    Key: {
-      _articleId: { N: id.toString() }
+    KeyConditionExpression: "#articleId = :articleId",
+    ExpressionAttributeNames: {
+      "#articleId": "_articleId"
+    },
+    ExpressionAttributeValues: {
+      ":articleId": { N: articleIdNum.toString() }
     }
   };
-  const command = new GetItemCommand(params);
-  const data = await client.send(command);
-  return data.Item;
+
+  try {
+    const command = new QueryCommand(params);
+    const data = await client.send(command);
+    return data.Items.length > 0 ? data.Items[0] : null;
+  } catch (error) {
+    throw error;
+  }
 };
 
 const create = async (article) => {
