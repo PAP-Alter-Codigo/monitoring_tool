@@ -35,42 +35,71 @@ const getById = async (id) => {
 const create = async (location) => {
     const params = {
         TableName: LOCATION,
-        Item: location
+        Item: {
+            "_idLocation": { N: location._idLocation.toString() },
+            "name": { S: location.name },
+            "geolocation": {
+                L: [
+                    { N: location.geolocation[0].toString() },
+                    { N: location.geolocation[1].toString() }
+                ]
+            }
+        }
     };
     const command = new PutItemCommand(params);
     await client.send(command);
-}
+};
 
 const update = async (id, location) => {
-    const params = {
-        TableName: tableName,
-        Key: {
-            "_idLocation": { N: id.toString() }
-        },
-        UpdateExpression: 'SET #name = :name, #description = :description',
-        ExpressionAttributeNames: {
-            '#name': 'name',
-            '#geolocation': 'geolocation',
-        },
-        ExpressionAttributeValues: {
-            ':name': { S: location.name },
-            ':geolocation': { S: location.geolocation }
-        }
-    };
-    const command = new UpdateItemCommand(params);
-    await client.send(command);
-}
-
-const remove = async (id) => {
     const params = {
         TableName: LOCATION,
         Key: {
             "_idLocation": { N: id.toString() }
+        },
+        UpdateExpression: 'SET #name = :name, #geolocation = :geolocation',
+        ExpressionAttributeNames: {
+            '#name': 'name',
+            '#geolocation': 'geolocation'
+        },
+        ExpressionAttributeValues: {
+            ':name': { S: location.name },
+            ':geolocation': location.geolocation
+                ? {
+                    L: [
+                        { N: location.geolocation[0].toString() },
+                        { N: location.geolocation[1].toString() }
+                    ]
+                }
+                : { L: [] }
         }
     };
-    const command = new DeleteItemCommand(params);
+    const command = new UpdateItemCommand(params);
     await client.send(command);
-}
+};
+
+const remove = async (id) => {
+    // Primero verificamos si la ubicación existe antes de eliminarla
+    const getParams = {
+        TableName: LOCATION,
+        Key: { "_idLocation": { N: id.toString() } }
+    };
+
+    const getCommand = new GetItemCommand(getParams);
+    const existingLocation = await client.send(getCommand);
+
+    if (!existingLocation.Item) {
+        throw new Error(`Location con ID ${id} no encontrado.`);
+    }
+
+    // Si la ubicación existe, procedemos con la eliminación
+    const deleteParams = {
+        TableName: LOCATION,
+        Key: { "_idLocation": { N: id.toString() } }
+    };
+
+    const deleteCommand = new DeleteItemCommand(deleteParams);
+    await client.send(deleteCommand);
+};
 
 module.exports = {
     getAll,

@@ -9,11 +9,11 @@ const client = new DynamoDBClient({
   }
 });
 
-const tableName = 'Actors';
+const ACTOR = 'Actors';
 
 const getAll = async () => {
   const params = {
-    TableName: tableName
+    TableName: ACTOR
   };
   const command = new ScanCommand(params);
   const data = await client.send(command);
@@ -22,7 +22,7 @@ const getAll = async () => {
 
 const getById = async (id) => {
   const params = {
-    TableName: tableName,
+    TableName: ACTOR,
     Key: {
       _actorId: { N: id.toString() }
     }
@@ -34,8 +34,13 @@ const getById = async (id) => {
 
 const create = async (actor) => {
   const params = {
-    TableName: tableName,
-    Item: actor
+    TableName: ACTOR,
+    Item: {
+      "_actorId": { N: actor._actorId.toString() },
+      "name": { S: actor.name },
+      "tag": { S: actor.tag },
+      "articleIds": actor.articleIds ? { NS: actor.articleIds.map(String) } : { NS: [] } // Validamos que articleIds exista
+    }
   };
   const command = new PutItemCommand(params);
   await client.send(command);
@@ -43,37 +48,49 @@ const create = async (actor) => {
 
 const update = async (id, actor) => {
   const params = {
-    TableName: tableName,
+    TableName: ACTOR,
     Key: {
       _actorId: { N: id.toString() }
     },
-    UpdateExpression: 'SET #name = :name, #type = :type, #location = :location, #description = :description',
+    UpdateExpression: 'SET #name = :name, #tag = :tag, #articleIds = :articleIds',
     ExpressionAttributeNames: {
       '#name': 'name',
-      '#type': 'type',
-      '#articleId': 'articleId',
-      '#location': 'location'
+      '#tag': 'tag',
+      '#articleIds': 'articleIds'
     },
     ExpressionAttributeValues: {
       ':name': { S: actor.name },
       ':tag': { S: actor.tag },
-      ':articleId': { S: actor.articleId },
-      ':location': { S: actor.location }
+      ':articleIds': actor.articleIds ? { NS: actor.articleIds.map(String) } : { NS: [] }
     }
   };
   const command = new UpdateItemCommand(params);
   await client.send(command);
 };
 
+
 const remove = async (id) => {
-  const params = {
-    TableName: tableName,
-    Key: {
-      _actorId: { N: id.toString() }
-    }
+  // * Primero verificamos si el actor existe
+  const getParams = {
+    TableName: ACTOR,
+    Key: { _actorId: { N: id.toString() } }
   };
-  const command = new DeleteItemCommand(params);
-  await client.send(command);
+
+  const getCommand = new GetItemCommand(getParams);
+  const existingActor = await client.send(getCommand);
+
+  if (!existingActor.Item) {
+    throw new Error(`Actor con ID ${id} no encontrado.`);
+  }
+
+  // * Si el actor existe, procedemos con la eliminación
+  const deleteParams = {
+    TableName: ACTOR,
+    Key: { _actorId: { N: id.toString() } }
+  };
+
+  const deleteCommand = new DeleteItemCommand(deleteParams);
+  await client.send(deleteCommand);
 };
 
 module.exports = {

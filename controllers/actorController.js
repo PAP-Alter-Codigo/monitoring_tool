@@ -41,7 +41,7 @@ const remove = async (req, res) => {
     await Actors.remove(req.params.id);
     res.json({ message: 'Actors deleted' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(404).json({ error: error.message });
   }
 };
 
