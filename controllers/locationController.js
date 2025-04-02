@@ -7,7 +7,6 @@ const getAll = async (req, res) => {
     console.log("**_Datos obtenidos:", locations);
     res.json(locations);
   } catch (error) {
-    console.error("❌ Error en getAll:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -19,7 +18,6 @@ const getById = async (req, res) => {
     console.log("**_Datos obtenidos:", location);
     res.json(location);
   } catch (error) {
-    console.error("❌ Error en getById:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -35,17 +33,35 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    await Location.update(req.params.id, req.body);
-    res.json({ message: 'location updated' });
+    const { id } = req.params;
+    const { name, geolocation } = req.body;
+
+    // Primero verificamos si la ubicación existe
+    const existingLocation = await Location.getById(id);
+    if (!existingLocation) {
+      return res.status(404).json({ error: `Location con ID ${id} no encontrada.` });
+    }
+
+    await Location.update(id, req.body);
+    res.json({ message: "Location updated" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
+
 const remove = async (req, res) => {
   try {
-    await Location.remove(req.params.id);
-    res.json({ message: 'location deleted' });
+    const { id } = req.params;
+
+    // Verificar si la ubicación existe antes de eliminarla
+    const existingLocation = await Location.getById(id);
+    if (!existingLocation) {
+      return res.status(404).json({ error: `Location con ID ${id} no encontrada.` });
+    }
+
+    await Location.remove(id);
+    res.json({ message: "Location deleted" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
