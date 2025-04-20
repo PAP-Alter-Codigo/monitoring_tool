@@ -29,7 +29,7 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   const { id } = req.params;
-  const { publicationDate } = req.query; // 🔥 Obtener publicationDate de la URL
+  const { publicationDate } = req.query; 
   const article = req.body;
 
   if (!publicationDate) {
@@ -47,7 +47,7 @@ const update = async (req, res) => {
 
 const remove = async (req, res) => {
   const { id } = req.params;
-  const { publicationDate } = req.query; // 🔥 Obtener publicationDate de la URL
+  const { publicationDate } = req.query; 
 
   if (!publicationDate) {
     return res.status(400).json({ error: "publicationDate es obligatorio" });
