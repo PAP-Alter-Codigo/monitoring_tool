@@ -28,18 +28,34 @@ const create = async (req, res) => {
 };
 
 const update = async (req, res) => {
+  const { id } = req.params;
+  const { publicationDate } = req.query; 
+  const article = req.body;
+
+  if (!publicationDate) {
+    return res.status(400).json({ error: "publicationDate es obligatorio" });
+  }
+
   try {
-    await Article.update(req.params.id, req.body);
-    res.json({ message: 'Article updated' });
+    await Article.update(id, publicationDate, article);
+    res.json({ message: "Artículo actualizado correctamente" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
+
 const remove = async (req, res) => {
+  const { id } = req.params;
+  const { publicationDate } = req.query; 
+
+  if (!publicationDate) {
+    return res.status(400).json({ error: "publicationDate es obligatorio" });
+  }
+
   try {
-    await Article.remove(req.params.id);
-    res.json({ message: 'Article deleted' });
+    await Article.remove(id, publicationDate);
+    res.json({ message: "Artículo eliminado correctamente" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
