@@ -1,5 +1,16 @@
 const Tag = require('../models/tag.js');
 
+const config = require('../config');
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const client = new DynamoDBClient({
+  region: config.AWS_REGION,
+  credentials: {
+    accessKeyId: config.AWS_ACCESS_KEY,
+    secretAccessKey: config.AWS_SECRET_KEY
+  }
+});
+
+
 const getAll = async (req, res) => {
   try {
     const tag = await Tag.getAll();
@@ -50,5 +61,6 @@ module.exports = {
   getById,
   create,
   update,
-  remove
+  remove,
+  __getClient: () => client // solo para test QUITAR???
 };

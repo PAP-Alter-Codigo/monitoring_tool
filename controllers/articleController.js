@@ -1,5 +1,16 @@
 const Article = require('../models/article.js');
 
+const config = require('../config');
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const client = new DynamoDBClient({
+  region: config.AWS_REGION,
+  credentials: {
+    accessKeyId: config.AWS_ACCESS_KEY,
+    secretAccessKey: config.AWS_SECRET_KEY
+  }
+});
+
+
 const getAll = async (req, res) => {
   try {
     const articles = await Article.getAll();
@@ -12,6 +23,9 @@ const getAll = async (req, res) => {
 const getById = async (req, res) => {
   try {
     const article = await Article.getById(req.params.id);
+    if (!article) {
+      return res.status(404).json({ message: 'Article not found' });
+    }
     res.json(article);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -66,5 +80,6 @@ module.exports = {
   getById,
   create,
   update,
-  remove
+  remove,
+  __getClient: () => client 
 };
