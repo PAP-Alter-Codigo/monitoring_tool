@@ -1,10 +1,19 @@
 const Location = require('../models/location.js');
 
+const isValidLocation = (loc) => {
+  return (
+    typeof loc._idLocation === 'number' &&
+    typeof loc.name === 'string' &&
+    Array.isArray(loc.geolocation) &&
+    loc.geolocation.length === 2 &&
+    typeof loc.geolocation[0] === 'number' &&
+    typeof loc.geolocation[1] === 'number'
+  );
+};
+
 const getAll = async (req, res) => {
   try {
-    console.log("__Ejecutando getAll() en Location__");
     const locations = await Location.getAll();
-    console.log("**_Datos obtenidos:", locations);
     res.json(locations);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -13,9 +22,10 @@ const getAll = async (req, res) => {
 
 const getById = async (req, res) => {
   try {
-    console.log(`__Ejecutando getById() con ID: ${req.params.id}`);
     const location = await Location.getById(req.params.id);
-    console.log("**_Datos obtenidos:", location);
+    if (!location) {
+      return res.status(404).json({ error: `Location with ID ${req.params.id} not found.` });
+    }
     res.json(location);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -24,9 +34,18 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    await Location.create(req.body);
-    res.status(201).json({ message: 'location created' });
+    const loc = req.body;
+
+    if (!isValidLocation(loc)) {
+      return res.status(400).json({ error: 'Invalid or incomplete payload for creating location.' });
+    }
+
+    await Location.create(loc);
+    res.status(201).json({ message: 'Location successfully created.' });
   } catch (error) {
+    if (error.message.startsWith('VALIDATION_ERROR')) {
+      return res.status(422).json({ error: error.message });
+    }
     res.status(500).json({ error: error.message });
   }
 };
@@ -36,32 +55,38 @@ const update = async (req, res) => {
     const { id } = req.params;
     const { name, geolocation } = req.body;
 
-    // Primero verificamos si la ubicación existe
-    const existingLocation = await Location.getById(id);
-    if (!existingLocation) {
-      return res.status(404).json({ error: `Location con ID ${id} no encontrada.` });
+    if (
+      typeof name !== 'string' ||
+      !Array.isArray(geolocation) ||
+      geolocation.length !== 2 ||
+      typeof geolocation[0] !== 'number' ||
+      typeof geolocation[1] !== 'number'
+    ) {
+      return res.status(400).json({ error: 'Invalid or incomplete payload for updating location.' });
+    }
+
+    const existing = await Location.getById(id);
+    if (!existing) {
+      return res.status(404).json({ error: `Location with ID ${id} not found.` });
     }
 
     await Location.update(id, req.body);
-    res.json({ message: "Location updated" });
+    res.status(200).json({ message: 'Location successfully updated.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-
 const remove = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Verificar si la ubicación existe antes de eliminarla
-    const existingLocation = await Location.getById(id);
-    if (!existingLocation) {
-      return res.status(404).json({ error: `Location con ID ${id} no encontrada.` });
+    const existing = await Location.getById(id);
+    if (!existing) {
+      return res.status(404).json({ error: `Location with ID ${id} not found.` });
     }
 
     await Location.remove(id);
-    res.json({ message: "Location deleted" });
+    res.status(200).json({ message: 'Location successfully deleted.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
