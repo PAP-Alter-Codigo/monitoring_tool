@@ -9,20 +9,20 @@ const client = new DynamoDBClient({
   }
 });
 
-const tableName = 'Tags';
+const TAGS = 'Tags';
 
 const getAll = async () => {
   const params = {
-    TableName: tableName
+    TableName: TAGS
   };
   const command = new ScanCommand(params);
   const data = await client.send(command);
   return data.Items;
-}
+};
 
 const getById = async (id) => {
   const params = {
-    TableName: tableName,
+    TableName: TAGS,
     Key: {
       _idTag: { N: id.toString() }
     }
@@ -30,26 +30,29 @@ const getById = async (id) => {
   const command = new GetItemCommand(params);
   const data = await client.send(command);
   return data.Item;
-}
+};
 
 const create = async (tag) => {
   const params = {
-    TableName: tableName,
-    Item: tag
+    TableName: TAGS,
+    Item: {
+      _idTag: { N: tag._idTag.toString() },
+      value: { S: tag.value }
+    }
   };
   const command = new PutItemCommand(params);
   await client.send(command);
-}
+};
 
 const update = async (id, tag) => {
   const params = {
-    TableName: tableName,
+    TableName: TAGS,
     Key: {
       _idTag: { N: id.toString() }
     },
-    UpdateExpression: 'SET #name = :name, #description = :description',
+    UpdateExpression: 'SET #value = :value',
     ExpressionAttributeNames: {
-      '#value': 'value',
+      '#value': 'value'
     },
     ExpressionAttributeValues: {
       ':value': { S: tag.value }
@@ -57,18 +60,18 @@ const update = async (id, tag) => {
   };
   const command = new UpdateItemCommand(params);
   await client.send(command);
-}
+};
 
 const remove = async (id) => {
   const params = {
-    TableName: tableName,
+    TableName: TAGS,
     Key: {
       _idTag: { N: id.toString() }
     }
   };
   const command = new DeleteItemCommand(params);
   await client.send(command);
-}
+};
 
 module.exports = {
   getAll,
