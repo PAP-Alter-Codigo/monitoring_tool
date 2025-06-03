@@ -1,10 +1,11 @@
 const dynamoose = require("dynamoose");
+const { v4: uuidv4 } = require("uuid");
 
 const locationSchema = new dynamoose.Schema({
   _idLocation: {
-    type: Number,
+    type: String,
     hashKey: true,
-    default: () => Date.now(),
+    default: uuidv4,
   },
   name: {
     type: String,

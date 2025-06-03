@@ -23,8 +23,7 @@ const getAll = async (req, res) => {
 
 const getById = async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    const location = await Location.get({ _idLocation: id });
+    const location = await Location.get({ _idLocation: req.params.id });
     if (!location) {
       return res.status(404).json({ error: `Location with ID ${req.params.id} not found.` });
     }
@@ -63,7 +62,7 @@ const update = async (req, res) => {
     const { id } = req.params;
     const { name, geolocation } = req.body;
     
-    const existing = await Location.get({ _idLocation: Number(id) });
+    const existing = await Location.get({ _idLocation: id });
     if (!existing) {
       return res.status(404).json({ error: `Location with ID ${id} not found.` });
     }
@@ -88,7 +87,7 @@ const update = async (req, res) => {
       return res.status(400).json({ error: 'No valid fields provided for update.' });
     }
 
-    await Location.update({ _idLocation: Number(id) }, updateData);
+    await Location.update({ _idLocation: id }, updateData);
     res.status(200).json({ message: 'Location successfully updated.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -99,12 +98,12 @@ const remove = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const existing = await Location.get({ _idLocation: Number(id) });
+    const existing = await Location.get({ _idLocation: id });
     if (!existing) {
       return res.status(404).json({ error: `Location with ID ${id} not found.` });
     }
 
-    await Location.delete({ _idLocation: Number(id) });
+    await Location.delete({ _idLocation: id });
     res.status(200).json({ message: 'Location successfully deleted.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
