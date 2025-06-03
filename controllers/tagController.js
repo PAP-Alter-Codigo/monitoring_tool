@@ -16,7 +16,7 @@ const isValidUpdatePayload = (tag) => (
 
 const getAll = async (req, res) => {
   try {
-    const tag = await Tag.getAll();
+    const tags = await Tag.getAll();
     res.status(200).json(tags);
   } catch (error) {
     res.status(500).json({ error: error.message });
