@@ -1,4 +1,4 @@
-const { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand, QueryCommand } = require('@aws-sdk/client-dynamodb');
 const config = require('../config');
 
 const client = new DynamoDBClient({
@@ -12,35 +12,22 @@ const client = new DynamoDBClient({
 const ARTICLES = 'Articles';
 
 const getAll = async () => {
-  const params = {
-    TableName: ARTICLES
-  };
-  const command = new ScanCommand(params);
+  const command = new ScanCommand({ TableName: ARTICLES });
   const data = await client.send(command);
   return data.Items;
 };
 
-const { QueryCommand } = require("@aws-sdk/client-dynamodb");
-
-const getById = async (id) => {
+const getById = async (id, publicationDate) => {
   const params = {
     TableName: ARTICLES,
-    FilterExpression: "#articleId = :articleId",
-    ExpressionAttributeNames: {
-      "#articleId": "_articleId"
-    },
-    ExpressionAttributeValues: {
-      ":articleId": { N: id.toString() }
+    Key: {
+      _articleId: { N: id.toString() },
+      publicationDate: { S: publicationDate }
     }
   };
-
-  try {
-    const command = new ScanCommand(params);
-    const data = await client.send(command);
-    return data.Items.length > 0 ? data.Items[0] : null;
-  } catch (error) {
-    throw error;
-  }
+  const command = new GetItemCommand(params);
+  const data = await client.send(command);
+  return data.Item;
 };
 
 const create = async (article) => {
@@ -64,18 +51,16 @@ const create = async (article) => {
       geolocation: { N: article.geolocation.toString() }
     }
   };
-
   const command = new PutItemCommand(params);
   await client.send(command);
 };
-
 
 const update = async (id, publicationDate, article) => {
   const params = {
     TableName: ARTICLES,
     Key: {
       _articleId: { N: id.toString() },
-      publicationDate: { S: publicationDate } 
+      publicationDate: { S: publicationDate }
     },
     UpdateExpression: 'SET #source = :source, #actorsMentioned = :actors, #tags = :tags, #geolocation = :geo',
     ExpressionAttributeNames: {
@@ -86,19 +71,18 @@ const update = async (id, publicationDate, article) => {
     },
     ExpressionAttributeValues: {
       ':source': { M: {
-        name: { S: article.source.name },
-        paywall: { BOOL: article.source.paywall },
-        headline: { S: article.source.headline },
-        url: { S: article.source.url },
-        author: { S: article.source.author },
-        coverageLevel: { S: article.source.coverageLevel }
-      }},
+          name: { S: article.source.name },
+          paywall: { BOOL: article.source.paywall },
+          headline: { S: article.source.headline },
+          url: { S: article.source.url },
+          author: { S: article.source.author },
+          coverageLevel: { S: article.source.coverageLevel }
+        }},
       ':actors': { NS: article.actorsMentioned.map(String) },
       ':tags': { NS: article.tags.map(String) },
       ':geo': { N: article.geolocation.toString() }
     }
   };
-
   const command = new UpdateItemCommand(params);
   await client.send(command);
 };
@@ -108,10 +92,9 @@ const remove = async (id, publicationDate) => {
     TableName: ARTICLES,
     Key: {
       _articleId: { N: id.toString() },
-      publicationDate: { S: publicationDate } // 🔥 Se agrega publicationDate como clave
+      publicationDate: { S: publicationDate } // Publication date part of the key
     }
   };
-
   const command = new DeleteItemCommand(params);
   await client.send(command);
 };
