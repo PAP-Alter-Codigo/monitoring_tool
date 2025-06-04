@@ -19,6 +19,6 @@ const locationSchema = new dynamoose.Schema({
   }
 });
 
-Location = dynamoose.model("Location", locationSchema);
+const Location = dynamoose.model("Location", locationSchema);
 
 module.exports = Location;

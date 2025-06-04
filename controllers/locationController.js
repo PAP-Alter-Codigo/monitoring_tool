@@ -37,7 +37,6 @@ const create = async (req, res) => {
   try {
     const loc = req.body;
 
-    //missing the id part because db should assing it
     if (!isValidLocation(loc)) {
       return res.status(400).json({ error: 'Invalid or incomplete payload for creating location.' });
     }
