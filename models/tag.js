@@ -13,6 +13,6 @@ const tagSchema = new dynamoose.Schema({
   },
 });
 
-const Tag = dynamoose.model("Tag", tagSchema);
+const Tag = dynamoose.model("Tags", tagSchema);
 
 module.exports = Tag;
