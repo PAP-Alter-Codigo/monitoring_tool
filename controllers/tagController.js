@@ -18,7 +18,7 @@ const getAll = async (req, res) => {
 const getById = async (req, res) => {
   try {
     const id = req.params.id;
-    const tag = await Tag.get({ _idTag: id});
+    const tag = await Tag.get({ id: id});
     if (!tag) {
       return res.status(404).json({ error: `Tag with ID ${id} not found.` });
     }
@@ -52,7 +52,7 @@ const update = async (req, res) => {
     const id = req.params.id;
     const { name } = req.body;
     
-    const existing = await Tag.get({ _idTag: id });
+    const existing = await Tag.get({ id: id });
     if (!existing) {
       return res.status(404).json({ error: `Tag with ID ${id} not found.` });
     }
@@ -70,7 +70,7 @@ const update = async (req, res) => {
       return res.status(400).json({ error: 'No valid fields provided for update.' });
     }
 
-    await Tag.update({ _idTag: id}, updateData);
+    await Tag.update({ id: id}, updateData);
     res.status(200).json({ message: 'Tag successfully updated.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -81,12 +81,12 @@ const remove = async (req, res) => {
   try {
   const id = req.params.id;
 
-    const existing = await Tag.get({ _idTag: id });
+    const existing = await Tag.get({ id: id });
     if (!existing) {
       return res.status(404).json({ error: `Tag with ID ${id} not found.` });
     }
 
-    await Tag.delete({ _idTag: id });
+    await Tag.delete({ id: id });
     res.status(200).json({ message: 'Tag successfully deleted.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
