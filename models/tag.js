@@ -2,7 +2,7 @@ const dynamoose = require("dynamoose");
 const { v4: uuidv4 } = require("uuid");
 
 const tagSchema = new dynamoose.Schema({
-  _idTag: {
+  id: {
     type: String,
     hashKey: true,
     default: uuidv4,

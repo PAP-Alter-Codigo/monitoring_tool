@@ -2,7 +2,7 @@ const dynamoose = require("dynamoose");
 const { v4: uuidv4 } = require("uuid");
 
 const locationSchema = new dynamoose.Schema({
-  _idLocation: {
+  id: {
     type: String,
     hashKey: true,
     default: uuidv4,
@@ -19,6 +19,6 @@ const locationSchema = new dynamoose.Schema({
   }
 });
 
-const Location = dynamoose.model("Location", locationSchema);
+const Location = dynamoose.model("Locations", locationSchema);
 
 module.exports = Location;
