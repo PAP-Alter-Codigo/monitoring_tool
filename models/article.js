@@ -39,8 +39,6 @@ const articleSchema = new dynamoose.Schema({
   },
 })
 
-Articles = dynamoose.model('Articles', articleSchema);
+Article = dynamoose.model('Articles', articleSchema);
 
-module.exports = {
-  Articles
-};
+module.exports = Article;

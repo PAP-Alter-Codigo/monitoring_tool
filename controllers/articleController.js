@@ -16,7 +16,7 @@ const isValidActorsMentioned = (actors) => Array.isArray(actors);
 
 const isValidTags = (tags) => Array.isArray(tags);
 
-const isValidGeolocation = (geo) => typeof geo === 'number';
+const isValidGeolocation = (geo) => typeof geo === 'string';
 
 const isValidArticlePayload = (article) =>
   article &&
@@ -56,9 +56,9 @@ const create = async (req, res) => {
       return res.status(400).json({ error: 'Invalid article payload.' });
     }
 
-    const exists = await Article.get({ id: article.id });
-    if (exists) {
-      return res.status(409).json({ error: `Article with ID ${article.id} already exists.` });
+    const exists = await Article.scan('source.url').eq(article.source.url).exec();
+    if (exists && exists.length > 0) {
+      return res.status(409).json({ error: `Article with URL ${article.source.url} already exists.` });
     }
 
     const newArticle = new Article({
