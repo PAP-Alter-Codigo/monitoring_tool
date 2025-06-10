@@ -3,26 +3,28 @@ const Article = require('../models/article.js');
 // Se usa en POST (create)
 const isValidPublicationDate = (date) => typeof date === 'string';
 
-const isValidSource = (source) =>
-  source &&
-  typeof source.name === 'string' &&
-  typeof source.paywall === 'boolean' &&
-  typeof source.headline === 'string' &&
-  typeof source.url === 'string' &&
-  typeof source.author === 'string' &&
-  typeof source.coverageLevel === 'string';
+const isValidSourceName = (name) => typeof name === 'string';
+const isValidPaywall = (paywall) => typeof paywall === 'boolean';
+const isValidHeadline = (headline) => typeof headline === 'string';
+const isValidUrl = (url) => typeof url === 'string';
+const isValidAuthor = (author) => typeof author === 'string';
+const isValidCoverageLevel = (coverageLevel) => typeof coverageLevel === 'string';
 
 const isValidActorsMentioned = (actors) => Array.isArray(actors);
 
 const isValidTags = (tags) => Array.isArray(tags);
-
 
 const isValidGeolocation = (geo) => typeof geo === 'string';
 
 const isValidArticlePayload = (article) =>
   article &&
   isValidPublicationDate(article.publicationDate) &&
-  isValidSource(article.source) &&
+  isValidSourceName(article.sourceName) &&
+  isValidPaywall(article.paywall) &&
+  isValidHeadline(article.headline) &&
+  isValidUrl(article.url) &&
+  isValidAuthor(article.author) &&
+  isValidCoverageLevel(article.coverageLevel) &&
   isValidActorsMentioned(article.actorsMentioned) &&
   isValidTags(article.tags) &&
   isValidGeolocation(article.geolocation);
@@ -49,7 +51,6 @@ const getById = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  
   try {
     const article = req.body;
   
@@ -57,14 +58,19 @@ const create = async (req, res) => {
       return res.status(400).json({ error: 'Invalid article payload.' });
     }
 
-    const exists = await Article.scan('source.url').eq(article.source.url).exec();
+    const exists = await Article.query('url').eq(article.url).exec();
     if (exists && exists.length > 0) {
-      return res.status(409).json({ error: `Article with URL ${article.source.url} already exists.` });
+      return res.status(409).json({ error: `Article with URL ${article.url} already exists.` });
     }
 
     const newArticle = new Article({
       publicationDate: article.publicationDate,
-      source: article.source,
+      sourceName: article.sourceName,
+      paywall: typeof article.paywall === 'boolean' ? article.paywall : false,
+      headline: article.headline,
+      url: article.url,
+      author: article.author || '',
+      coverageLevel: article.coverageLevel || '',
       actorsMentioned: article.actorsMentioned,
       tags: article.tags,
       geolocation: article.geolocation
@@ -78,8 +84,8 @@ const create = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const id = req.params;
-  const { publicationDate, source, actorsMentioned, tags, geolocation } = req.body;
+  const { id } = req.params;
+  const { publicationDate, sourceName, paywall, headline, url, author, coverageLevel, actorsMentioned, tags, geolocation } = req.body;
 
   try {
     const existing = await Article.get({id});
@@ -96,11 +102,46 @@ const update = async (req, res) => {
       updateData.publicationDate = publicationDate;
     }
 
-    if (source) {
-      if(!isValidSource(source)) {
-        return res.status(400).json({ error: 'Invalid source.' });
+    if(sourceName) {
+      if(!isValidSourceName(sourceName)) {
+        return res.status(400).json({ error: 'Invalid sourceName.' });
       }
-      updateData.source = source;
+      updateData.sourceName = sourceName;
+    }
+
+    if (paywall !== undefined) {
+      if(!isValidPaywall(paywall)) {
+        return res.status(400).json({ error: 'Invalid paywall.' });
+      }
+      updateData.paywall = paywall;
+    }
+
+    if (headline) {
+      if(!isValidHeadline(headline)) {  
+        return res.status(400).json({ error: 'Invalid headline.' });
+      }
+      updateData.headline = headline;
+    }
+
+    if (url) {
+      if(!isValidUrl(url)) {
+        return res.status(400).json({ error: 'Invalid url.' });
+      }
+      updateData.url = url;
+    }
+
+    if (author) {
+      if(!isValidAuthor(author)) {
+        return res.status(400).json({ error: 'Invalid author.' });
+      }
+      updateData.author = author;
+    }
+
+    if (coverageLevel) {
+      if(!isValidCoverageLevel(coverageLevel)) {
+        return res.status(400).json({ error: 'Invalid coverageLevel.' });
+      }
+      updateData.coverageLevel = coverageLevel;
     }
 
     if (actorsMentioned) {

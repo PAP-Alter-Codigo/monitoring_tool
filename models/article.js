@@ -11,17 +11,30 @@ const articleSchema = new dynamoose.Schema({
     type: String,
     required: true,
   },
-  source: { // We don't need a source object. Flatten every 'schema' attribute to have the same hierarchy as id.
-    type: Object,
-    schema: {
-      name: String, //required
-      paywall: Boolean,
-      headline: String, // required
-      url: String, // required
-      author: String,
-      coverageLevel: String
+  sourceName: {
+    type: String,
+    required: true,
+  },
+  paywall: {
+    type: Boolean,
+  },
+  headline: {
+    type: String,
+    required: true,
+  },
+  url: {
+    type: String,
+    required: true,
+    index: {
+      global: true,
+      name: 'url-index',
     },
-    required: true
+  },
+  author: {
+    type: String,
+  },
+  coverageLevel: {
+    type: String,
   },
   actorsMentioned: {
     type: Array,
