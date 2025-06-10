@@ -1,22 +1,14 @@
 const Tag = require('../models/tag.js');
 
-// Validadores auxiliares
-const isValidId = (id) => Number.isInteger(Number(id));
+const isValidName = (name) => typeof name === 'string' && name.trim().length > 0;
 
-const isValidTagPayload = (tag) => (
-  tag &&
-  typeof tag._idTag === 'number' &&
-  typeof tag.value === 'string'
-);
-
-const isValidUpdatePayload = (tag) => (
-  tag &&
-  typeof tag.value === 'string'
-);
+const isValidTag = (tag) => {
+  return isValidName(tag?.name);
+};
 
 const getAll = async (req, res) => {
   try {
-    const tags = await Tag.getAll();
+    const tags = await Tag.scan().exec();
     res.status(200).json(tags);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -24,13 +16,9 @@ const getAll = async (req, res) => {
 };
 
 const getById = async (req, res) => {
-  const id = Number(req.params.id);
-  if (!isValidId(id)) {
-    return res.status(400).json({ error: 'Invalid ID format. Must be a number.' });
-  }
-
   try {
-    const tag = await Tag.getById(id);
+    const id = req.params.id;
+    const tag = await Tag.get({ _idTag: id});
     if (!tag) {
       return res.status(404).json({ error: `Tag with ID ${id} not found.` });
     }
@@ -41,19 +29,18 @@ const getById = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const tag = req.body;
-
-  if (!isValidTagPayload(tag)) {
-    return res.status(400).json({ error: 'Missing or invalid fields: "_idTag" must be number and "value" must be string.' });
-  }
-
   try {
-    const exists = await Tag.getById(tag._idTag);
-    if (exists) {
-      return res.status(409).json({ error: `Tag with ID ${tag._idTag} already exists.` });
+    const tag = req.body;
+
+    if (!isValidTag(tag)) {
+      return res.status(400).json({ error: 'Missing or invalid fields: "value" must be string.' });
     }
 
-    await Tag.create(tag);
+    const newTag = new Tag({
+      name: tag.name
+    });
+  
+    await newTag.save();
     res.status(201).json({ message: 'Tag successfully created.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -61,20 +48,29 @@ const create = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const id = Number(req.params.id);
-  const { value } = req.body;
-
-  if (!isValidId(id) || !isValidUpdatePayload({ value })) {
-    return res.status(400).json({ error: 'Invalid ID or value format. ID must be number and value must be non-empty string.' });
-  }
-
   try {
-    const existing = await Tag.getById(id);
+    const id = req.params.id;
+    const { name } = req.body;
+    
+    const existing = await Tag.get({ _idTag: id });
     if (!existing) {
       return res.status(404).json({ error: `Tag with ID ${id} not found.` });
     }
 
-    await Tag.update(id, { value });
+    const updateData = {};
+
+    if(name){
+      if (!isValidName(name)) {
+        return res.status(400).json({ error: 'Invalid name format. Must be a non-empty string.' });
+      }
+      updateData.name = name;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No valid fields provided for update.' });
+    }
+
+    await Tag.update({ _idTag: id}, updateData);
     res.status(200).json({ message: 'Tag successfully updated.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -82,18 +78,15 @@ const update = async (req, res) => {
 };
 
 const remove = async (req, res) => {
-  const id = Number(req.params.id);
-  if (!isValidId(id)) {
-    return res.status(400).json({ error: 'Invalid ID format. Must be a number.' });
-  }
-
   try {
-    const existing = await Tag.getById(id);
+  const id = req.params.id;
+
+    const existing = await Tag.get({ _idTag: id });
     if (!existing) {
       return res.status(404).json({ error: `Tag with ID ${id} not found.` });
     }
 
-    await Tag.remove(id);
+    await Tag.delete({ _idTag: id });
     res.status(200).json({ message: 'Tag successfully deleted.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
