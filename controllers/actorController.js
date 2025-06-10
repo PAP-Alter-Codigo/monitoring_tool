@@ -1,13 +1,12 @@
 const Actor = require("../models/actor.js");
 const isValidName = (name) => typeof name === "string";
-const isValidTag = (tag) => typeof tag === "string";
-// ! Aquí aparece el string del tag, pero en articles, el tag es el id del nombre del tag, habría que revisar o no?
+const isValidTag = (tagId) => typeof tagId === "string";
 const isValidArticleIds = (ids) =>
   Array.isArray(ids) && ids.every((id) => typeof id === "string");
 
 const isValidActor = (actor) =>
   isValidName(actor?.name) &&
-  isValidTag(actor?.tag) &&
+  isValidTag(actor?.tagId) &&
   isValidArticleIds(actor?.articleIds ?? []);
 
 const getAll = async (req, res) => {
@@ -39,11 +38,11 @@ const create = async (req, res) => {
       return res.status(400).json({ error: "Invalid or incomplete payload for creating actor." });
     }
 
-    const newActor = new Actor({
-      name: actor.name,
-      tag: actor.tag,
-      articleIds: actor.articleIds
-    });
+    const newActorData = { name: actor.name };
+    if (actor.tagId) newActorData.tagId = actor.tagId;
+    if (actor.articleIds) newActorData.articleIds = actor.articleIds;
+
+    const newActor = new Actor(newActorData);
 
     await newActor.save();
     res.status(201).json({ message: "Actor successfully created." });
@@ -58,7 +57,7 @@ const create = async (req, res) => {
 const update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, tag, articleIds } = req.body;
+    const { name, tagId, articleIds } = req.body;
 
     const existing = await Actor.get({ id });
     if (!existing) {
@@ -74,11 +73,11 @@ const update = async (req, res) => {
       updateData.name = name;
     }
 
-    if (tag) {
-      if (!isValidTag(tag)) {
+    if (tagId) {
+      if (!isValidTag(tagId)) {
         return res.status(400).json({ error: "Invalid tag value." });
       }
-      updateData.tag = tag;
+      updateData.tagId = tagId;
     }
 
     if (articleIds) {

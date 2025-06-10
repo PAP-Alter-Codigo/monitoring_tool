@@ -7,7 +7,7 @@ const Actor = require('../models/actor');
 describe('Actor Controller - Unit Test', () => {
     let sandbox;
     let req, res;
-    const fakeActor = { id: 'a1b2c3', name: 'Javier Prueba', tag: 'Termo-eléctrica', articleIds: ['art1', 'art2'] };
+    const fakeActor = { id: 'a1b2c3', name: 'Javier Prueba', tagId: 'Termo-eléctrica', articleIds: ['art1', 'art2'] };
 
     beforeEach(() => {
         sandbox = sinon.createSandbox();
@@ -45,7 +45,7 @@ describe('Actor Controller - Unit Test', () => {
     it('should create a new actor', async () => {
         req.body = {
             name: 'Nuevo',
-            tag: 'Basurero',
+            tagId: 'Basurero',
             articleIds: ['art3']
         };
         sandbox.stub(Actor.prototype, 'save').resolves();
@@ -57,7 +57,7 @@ describe('Actor Controller - Unit Test', () => {
     it('should return 400 for invalid create payload', async () => {
         req.body = {
             name: 'Sin artículos',
-            tag: 'Error',
+            tagId: 'Error',
             articleIds: 'no-es-array'
         };
         await ActorController.create(req, res);
@@ -67,7 +67,7 @@ describe('Actor Controller - Unit Test', () => {
     it('should return 422 if validation error occurs', async () => {
         req.body = {
             name: 'Nombre',
-            tag: 'Tag',
+            tagId: 'Tag',
             articleIds: ['ok']
         };
         sandbox.stub(Actor.prototype, 'save').rejects(new Error('VALIDATION_ERROR: formato incorrecto'));
@@ -79,7 +79,7 @@ describe('Actor Controller - Unit Test', () => {
         req.params = { id: 'a1b2c3' };
         req.body = {
             name: 'Actualizado',
-            tag: 'Nuevo Tag',
+            tagId: 'Nuevo Tag',
             articleIds: ['nuevo1']
         };
         sandbox.stub(Actor, 'get').resolves(fakeActor);
