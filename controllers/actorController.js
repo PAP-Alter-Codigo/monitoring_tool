@@ -1,21 +1,19 @@
-const Actors = require('../models/actor.js');
+const Actor = require("../models/actor.js");
+const isValidName = (name) => typeof name === "string";
+const isValidTag = (tag) => typeof tag === "string";
+// ! Aquí aparece el string del tag, pero en articles, el tag es el id del nombre del tag, habría que revisar o no?
+const isValidArticleIds = (ids) =>
+  Array.isArray(ids) && ids.every((id) => typeof id === "string");
 
-const isValidActor = (actor) => {
-  if (
-    typeof actor._actorId !== 'number' ||
-    typeof actor.name !== 'string' ||
-    typeof actor.tag !== 'string' ||
-    !Array.isArray(actor.articleIds)
-  ) {
-    return false;
-  }
-  return true;
-};
+const isValidActor = (actor) =>
+  isValidName(actor?.name) &&
+  isValidTag(actor?.tag) &&
+  isValidArticleIds(actor?.articleIds ?? []);
 
 const getAll = async (req, res) => {
   try {
-    const actors = await Actors.getAll();
-    res.json(actors);
+    const actors = await Actor.scan().exec();
+    res.status(200).json(actors);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -23,11 +21,11 @@ const getAll = async (req, res) => {
 
 const getById = async (req, res) => {
   try {
-    const actor = await Actors.getById(req.params.id);
+    const actor = await Actor.get({ id: req.params.id });
     if (!actor) {
       return res.status(404).json({ error: `Actor with ID ${req.params.id} not found.` });
     }
-    res.json(actor);
+    res.status(200).json(actor);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -38,14 +36,20 @@ const create = async (req, res) => {
     const actor = req.body;
 
     if (!isValidActor(actor)) {
-      return res.status(400).json({ error: 'Invalid or incomplete data to create an actor.' });
+      return res.status(400).json({ error: "Invalid or incomplete payload for creating actor." });
     }
 
-    await Actors.create(actor);
-    res.status(201).json({ message: 'Actor created successfully.' });
+    const newActor = new Actor({
+      name: actor.name,
+      tag: actor.tag,
+      articleIds: actor.articleIds
+    });
+
+    await newActor.save();
+    res.status(201).json({ message: "Actor successfully created." });
   } catch (error) {
-    if (error.message.startsWith('VALIDATION_ERROR')) {
-      return res.status(422).json({ error: 'Validation error: ' + error.message });
+    if (error.message.startsWith("VALIDATION_ERROR")) {
+      return res.status(422).json({ error: error.message });
     }
     res.status(500).json({ error: error.message });
   }
@@ -53,20 +57,45 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const actor = req.body;
     const { id } = req.params;
+    const { name, tag, articleIds } = req.body;
 
-    if (!actor.name || !actor.tag || !Array.isArray(actor.articleIds)) {
-      return res.status(400).json({ error: 'Incomplete data to update the actor.' });
-    }
-
-    const existing = await Actors.getById(id);
+    const existing = await Actor.get({ id });
     if (!existing) {
       return res.status(404).json({ error: `Actor with ID ${id} not found.` });
     }
 
-    await Actors.update(id, actor);
-    res.status(200).json({ message: 'Actor updated successfully.' });
+    const updateData = {};
+
+    if (name) {
+      if (!isValidName(name)) {
+        return res.status(400).json({ error: "Invalid name value." });
+      }
+      updateData.name = name;
+    }
+
+    if (tag) {
+      if (!isValidTag(tag)) {
+        return res.status(400).json({ error: "Invalid tag value." });
+      }
+      updateData.tag = tag;
+    }
+
+    if (articleIds) {
+      if (!isValidArticleIds(articleIds)) {
+        return res.status(400).json({ error: "Invalid articleIds array." });
+      }
+      updateData.articleIds = articleIds;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res
+        .status(400)
+        .json({ error: "No valid fields provided for update." });
+    }
+
+    await Actor.update({ id }, updateData);
+    res.status(200).json({ message: "Actor successfully updated." });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -75,13 +104,14 @@ const update = async (req, res) => {
 const remove = async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = await Actors.getById(id);
+
+    const existing = await Actor.get({ id });
     if (!existing) {
       return res.status(404).json({ error: `Actor with ID ${id} not found.` });
     }
 
-    await Actors.remove(id);
-    res.status(200).json({ message: 'Actor deleted successfully.' });
+    await Actor.delete({ id });
+    res.status(200).json({ message: "Actor successfully deleted." });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

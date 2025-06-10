@@ -39,6 +39,7 @@ const articleSchema = new dynamoose.Schema({
   },
 })
 
+
 Article = dynamoose.model('Articles', articleSchema);
 
 module.exports = Article;

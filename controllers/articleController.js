@@ -16,6 +16,7 @@ const isValidActorsMentioned = (actors) => Array.isArray(actors);
 
 const isValidTags = (tags) => Array.isArray(tags);
 
+
 const isValidGeolocation = (geo) => typeof geo === 'string';
 
 const isValidArticlePayload = (article) =>
