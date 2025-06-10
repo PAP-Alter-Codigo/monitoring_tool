@@ -1,17 +1,14 @@
-const Actor = require('../models/actor.js');
-
-const isValidName = (name) => typeof name === 'string';
-
-const isValidTag = (tag) => typeof tag === 'string';
+const Actor = require("../models/actor.js");
+const isValidName = (name) => typeof name === "string";
+const isValidTag = (tag) => typeof tag === "string";
 // ! Aquí aparece el string del tag, pero en articles, el tag es el id del nombre del tag, habría que revisar o no?
 const isValidArticleIds = (ids) =>
-  Array.isArray(ids) && ids.every((id) => typeof id === 'string');
+  Array.isArray(ids) && ids.every((id) => typeof id === "string");
 
 const isValidActor = (actor) =>
   isValidName(actor?.name) &&
   isValidTag(actor?.tag) &&
   isValidArticleIds(actor?.articleIds ?? []);
-
 
 const getAll = async (req, res) => {
   try {
@@ -39,7 +36,7 @@ const create = async (req, res) => {
     const actor = req.body;
 
     if (!isValidActor(actor)) {
-      return res.status(400).json({ error: 'Invalid or incomplete payload for creating actor.' });
+      return res.status(400).json({ error: "Invalid or incomplete payload for creating actor." });
     }
 
     const newActor = new Actor({
@@ -49,9 +46,9 @@ const create = async (req, res) => {
     });
 
     await newActor.save();
-    res.status(201).json({ message: 'Actor successfully created.' });
+    res.status(201).json({ message: "Actor successfully created." });
   } catch (error) {
-    if (error.message.startsWith('VALIDATION_ERROR')) {
+    if (error.message.startsWith("VALIDATION_ERROR")) {
       return res.status(422).json({ error: error.message });
     }
     res.status(500).json({ error: error.message });
@@ -72,31 +69,33 @@ const update = async (req, res) => {
 
     if (name) {
       if (!isValidName(name)) {
-        return res.status(400).json({ error: 'Invalid name value.' });
+        return res.status(400).json({ error: "Invalid name value." });
       }
       updateData.name = name;
     }
 
     if (tag) {
       if (!isValidTag(tag)) {
-        return res.status(400).json({ error: 'Invalid tag value.' });
+        return res.status(400).json({ error: "Invalid tag value." });
       }
       updateData.tag = tag;
     }
 
     if (articleIds) {
       if (!isValidArticleIds(articleIds)) {
-        return res.status(400).json({ error: 'Invalid articleIds array.' });
+        return res.status(400).json({ error: "Invalid articleIds array." });
       }
       updateData.articleIds = articleIds;
     }
 
     if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({ error: 'No valid fields provided for update.' });
+      return res
+        .status(400)
+        .json({ error: "No valid fields provided for update." });
     }
 
     await Actor.update({ id }, updateData);
-    res.status(200).json({ message: 'Actor successfully updated.' });
+    res.status(200).json({ message: "Actor successfully updated." });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -112,7 +111,7 @@ const remove = async (req, res) => {
     }
 
     await Actor.delete({ id });
-    res.status(200).json({ message: 'Actor successfully deleted.' });
+    res.status(200).json({ message: "Actor successfully deleted." });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
