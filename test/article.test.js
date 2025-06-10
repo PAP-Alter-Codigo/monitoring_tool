@@ -7,20 +7,18 @@ const Article = require('../models/article');
 describe('Article - Unit Testing', () => {
   let req, res, sandbox;
   const mockArticle = {
-        _articleId: 'abc101',
-        publicationDate: "2024-12-10",
-        source: {
-          name: "La Jornada",
-          paywall: false,
-          headline: "Comunidades denuncian afectaciones por termoeléctrica en Juanacatlán",
-          url: "https://www.jornada.com.mx/nota/termica-juanacatlan",
-          author: "Laura Gómez",
-          coverageLevel: "regional"
-        },
-        actorsMentioned: ['1', '3'],
-        tags: ['2', '4'],
-        geolocation: '20'
-      };
+    id: "abc101",
+    publicationDate: "2024-12-10",
+    sourceName: "La Jornada",
+    paywall: false,
+    headline: "Comunidades denuncian afectaciones por termoeléctrica en Juanacatlán",
+    url: "https://www.jornada.com.mx/nota/termica-juanacatlan",
+    author: "Laura Gómez",
+    coverageLevel: "regional",
+    actorsMentioned: ["1", "3"],
+    tags: ["2", "4"],
+    geolocation: "20"
+  };
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -58,20 +56,18 @@ describe('Article - Unit Testing', () => {
   it('should create a new article', async () => {
     req.body = {
       publicationDate: "2024-12-10",
-      source: {
-        name: "La Jornada",
-        paywall: false,
-        headline: "Comunidades denuncian afectaciones por termoeléctrica en Juanacatlán",
-        url: "https://www.jornada.com.mx/",
-        author: "Laura Gómez",
-        coverageLevel: "regional"
-      },
+      sourceName: "La Jornada",
+      paywall: false,
+      headline: "Comunidades denuncian afectaciones por termoeléctrica en Juanacatlán",
+      url: "https://www.jornada.com.mx/",
+      author: "Laura Gómez",
+      coverageLevel: "regional",
       actorsMentioned: ['1', '3'],
       tags: ['2', '4'],
       geolocation: '20'
     };
 
-    sandbox.stub(Article, 'scan').returns({
+    sandbox.stub(Article, 'query').returns({
       eq: () => ({
         exec: async () => []
       })
@@ -86,7 +82,7 @@ describe('Article - Unit Testing', () => {
 
   it('should return 400 if source is missing', async () => {
     req.body = {
-      _articleId: 100,
+      id: 100,
       publicationDate: "2024-01-01",
       actorsMentioned: [],
       tags: [],
@@ -100,7 +96,7 @@ describe('Article - Unit Testing', () => {
     req.body = mockArticle;
     const execStub = sinon.stub().resolves([mockArticle]);
     const eqStub = sinon.stub().returns({ exec: execStub });
-    sandbox.stub(Article, 'scan').returns({ eq: eqStub });
+    sandbox.stub(Article, 'query').returns({ eq: eqStub });
 
     await articleController.create(req, res);
     expect(res.status.calledWith(409)).to.be.true;
@@ -110,14 +106,12 @@ describe('Article - Unit Testing', () => {
     req.params = { id: 'abc101' };
     req.body = {
       publicationDate: "2024-12-10",
-      source: {
-        name: "Actualizado",
-        paywall: true,
-        headline: "Minería amenaza patrimonio natural en Wirikuta",
-        url: "https://www.proceso.com.mx/wirikuta",
-        author: "Carlos Pérez",
-        coverageLevel: "nacional"
-      },
+      sourceName: "Actualizado",
+      paywall: true,
+      headline: "Minería amenaza patrimonio natural en Wirikuta",
+      url: "https://www.proceso.com.mx/wirikuta",
+      author: "Carlos Pérez",
+      coverageLevel: "nacional",
       actorsMentioned: ['5'],
       tags: ['6'],
       geolocation: '21'
@@ -131,15 +125,13 @@ describe('Article - Unit Testing', () => {
   it('should return 404 if not found', async () => {
     req.params = { id: 'notFound' };
     req.body = {
-      source: {
-        publicationDate: "2025-01-01",
-        name: "Proceso",
-        paywall: true,
-        headline: "Minería amenaza patrimonio natural en Wirikuta",
-        url: "https://www.proceso.com.mx/wirikuta",
-        author: "Carlos Pérez",
-        coverageLevel: "nacional"
-      },
+      publicationDate: "2025-01-01",
+      sourceName: "Proceso",
+      paywall: true,
+      headline: "Minería amenaza patrimonio natural en Wirikuta",
+      url: "https://www.proceso.com.mx/wirikuta",
+      author: "Carlos Pérez",
+      coverageLevel: "nacional",
       actorsMentioned: ['2'],
       tags: ['1'],
       geolocation: '21.6822'
