@@ -13,12 +13,12 @@ const actorSchema = new dynamoose.Schema({
   },
   tag: {
     type: String,
-    required: true,
+    required: true, //not- required
   },
   articleIds: {
     type: Array,
     schema: [String],
-    required: true,
+    required: true, // not required
     validate: (val) => Array.isArray(val) && val.every(id => typeof id === 'string'),
   },
 });
