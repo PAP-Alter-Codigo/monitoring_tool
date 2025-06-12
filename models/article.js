@@ -39,14 +39,13 @@ const articleSchema = new dynamoose.Schema({
   actorsMentioned: {
     type: Array,
     schema: [String],
-    required: true,
   },
   tags: {
     type: Array,
     schema: [String],
     required: true,
   },
-  geolocation: {
+  location: {
     type: String,
     required: true,
   },
