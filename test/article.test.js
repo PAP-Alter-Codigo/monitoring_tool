@@ -17,7 +17,7 @@ describe('Article - Unit Testing', () => {
     coverageLevel: "regional",
     actorsMentioned: ["1", "3"],
     tags: ["2", "4"],
-    geolocation: "20"
+    location: "20"
   };
 
   beforeEach(() => {
@@ -64,7 +64,7 @@ describe('Article - Unit Testing', () => {
       coverageLevel: "regional",
       actorsMentioned: ['1', '3'],
       tags: ['2', '4'],
-      geolocation: '20'
+      location: '20'
     };
 
     sandbox.stub(Article, 'query').returns({
@@ -86,7 +86,7 @@ describe('Article - Unit Testing', () => {
       publicationDate: "2024-01-01",
       actorsMentioned: [],
       tags: [],
-      geolocation: 0
+      location: 0
     };
     await articleController.create(req, res);
     expect(res.status.calledWith(400)).to.be.true;
@@ -114,7 +114,7 @@ describe('Article - Unit Testing', () => {
       coverageLevel: "nacional",
       actorsMentioned: ['5'],
       tags: ['6'],
-      geolocation: '21'
+      location: '21'
     };
     sandbox.stub(Article, 'get').resolves(mockArticle);
     sandbox.stub(Article, 'update').resolves();
@@ -134,7 +134,7 @@ describe('Article - Unit Testing', () => {
       coverageLevel: "nacional",
       actorsMentioned: ['2'],
       tags: ['1'],
-      geolocation: '21.6822'
+      location: '21.6822'
     };
     sandbox.stub(Article, 'get').resolves(null);
     await articleController.update(req, res);
