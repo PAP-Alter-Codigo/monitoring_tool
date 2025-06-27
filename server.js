@@ -2,20 +2,39 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const dynamoose = require('dynamoose')
 const config = require('./config.js');
+const cors = require('cors');
+const session = require('express-session');
+const passport = require('passport');
+require('./utils/googleAuth.js');
 
 const swaggerConfig = require('./swagger.config.json');
 const { serve, setup } = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
 
-const articlesRoutes = require('./routes/articleRoutes');
-const actorsRoutes = require('./routes/actorRoutes');
-const tagsRoutes = require('./routes/tagRoutes');
-const locationsRoutes = require('./routes/locationRoutes');
+const routes = require('./routes/index.js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
+app.use(cors({
+  origin: 'http://localhost:5173', // your frontend's origin
+  credentials: true
+}))
+
+/* Use that in production with HTTPS
+app.use(session({
+  secret: 'your_strong_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: true,        // ⬅️ required if using HTTPS
+    httpOnly: true,      // ⬅️ protects from client-side JS
+    sameSite: 'lax',     // ⬅️ good balance of security & usability
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  }
+}));
+*/
 
 const ddb = new dynamoose.aws.ddb.DynamoDB({
   region: config.AWS_REGION,
@@ -26,10 +45,17 @@ const ddb = new dynamoose.aws.ddb.DynamoDB({
 });
 dynamoose.aws.ddb.set(ddb);
 
-app.use('/articles', articlesRoutes);
-app.use('/actors', actorsRoutes);
-app.use('/tags', tagsRoutes);
-app.use('/locations', locationsRoutes);
+app.use(session({
+  secret: 'your_strong_secret', //change this to a strong secret for production
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use('/', routes);
 
 const swaggerDocs = swaggerJSDoc(swaggerConfig);
 app.use('/api-docs', serve, setup(swaggerDocs));
