@@ -14,20 +14,22 @@ const isValidActorsMentioned = (actors) => Array.isArray(actors);
 
 const isValidTags = (tags) => Array.isArray(tags);
 
-const isValidGeolocation = (geo) => typeof geo === 'string';
+const isValidLocation = (location) => typeof location === 'string';
 
-const isValidArticlePayload = (article) =>
-  article &&
-  isValidPublicationDate(article.publicationDate) &&
-  isValidSourceName(article.sourceName) &&
-  isValidPaywall(article.paywall) &&
-  isValidHeadline(article.headline) &&
-  isValidUrl(article.url) &&
-  isValidAuthor(article.author) &&
-  isValidCoverageLevel(article.coverageLevel) &&
-  isValidActorsMentioned(article.actorsMentioned) &&
-  isValidTags(article.tags) &&
-  isValidGeolocation(article.geolocation);
+const validateArticlePayload = (article) => {
+  if (!article) return 'Article payload is missing.';
+  if (!isValidPublicationDate(article.publicationDate)) return 'Invalid publicationDate.';
+  if (!isValidSourceName(article.sourceName)) return 'Invalid sourceName.';
+  if (!isValidPaywall(article.paywall)) return 'Invalid paywall.';
+  if (!isValidHeadline(article.headline)) return 'Invalid headline.';
+  if (!isValidUrl(article.url)) return 'Invalid url.';
+  if (!isValidAuthor(article.author)) return 'Invalid author.';
+  if (!isValidCoverageLevel(article.coverageLevel)) return 'Invalid coverageLevel.';
+  if (!isValidActorsMentioned(article.actorsMentioned)) return 'Invalid actorsMentioned.';
+  if (!isValidTags(article.tags)) return 'Invalid tags.';
+  if (!isValidLocation(article.location)) return 'Invalid location.';
+  return null;
+};
 
 const getAll = async (req, res) => {
   try {
@@ -48,14 +50,15 @@ const getById = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-};
 
+}
 const create = async (req, res) => {
   try {
     const article = req.body;
   
-    if (!isValidArticlePayload(article)) {
-      return res.status(400).json({ error: 'Invalid article payload.' });
+    const validationError = validateArticlePayload(article);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
     }
 
     const exists = await Article.query('url').eq(article.url).exec();
@@ -73,7 +76,7 @@ const create = async (req, res) => {
       coverageLevel: article.coverageLevel || '',
       actorsMentioned: article.actorsMentioned,
       tags: article.tags,
-      geolocation: article.geolocation
+      location: article.location
     });
 
     await newArticle.save();
