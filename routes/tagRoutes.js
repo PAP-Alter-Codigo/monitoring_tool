@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const tagsController = require('../controllers/tagController.js');
+const { ensureAuthenticated } = require('../middlewares/auth');
 
 /**
  * @swagger
@@ -14,7 +15,7 @@ const tagsController = require('../controllers/tagController.js');
  *       '500':
  *         description: Internal server error
  */
-router.get('/', tagsController.getAll);
+router.get('/', ensureAuthenticated, tagsController.getAll);
 
 /**
  * @swagger
@@ -37,7 +38,7 @@ router.get('/', tagsController.getAll);
  *       '500':
  *         description: Internal server error
  */
-router.get('/:id', tagsController.getById);
+router.get('/:id', ensureAuthenticated, tagsController.getById);
 
 /**
  * @swagger

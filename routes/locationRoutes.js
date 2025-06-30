@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const locationsController = require('../controllers/locationController.js');
+const { ensureAuthenticated } = require('../middlewares/auth');
 
 /**
  * @swagger
@@ -14,7 +15,7 @@ const locationsController = require('../controllers/locationController.js');
  *       '500':
  *         description: Internal server error
  */
-router.get('/', locationsController.getAll);
+router.get('/', ensureAuthenticated, locationsController.getAll);
 
 /**
  * @swagger
@@ -37,7 +38,7 @@ router.get('/', locationsController.getAll);
  *       '500':
  *         description: Internal server error
  */
-router.get('/:id', locationsController.getById);
+router.get('/:id', ensureAuthenticated, locationsController.getById);
 
 /**
  * @swagger

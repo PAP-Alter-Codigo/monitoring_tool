@@ -14,10 +14,14 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.637.0",
     "aws-sdk": "^2.1684.0",
+    "cors": "^2.8.5",
     "cron": "^3.1.9",
     "csv-parser": "^3.0.0",
     "dynamoose": "^4.0.4",
     "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0"
