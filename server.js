@@ -60,6 +60,8 @@ app.use('/', routes);
 const swaggerDocs = swaggerJSDoc(swaggerConfig);
 app.use('/api-docs', serve, setup(swaggerDocs));
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server is running on port ${PORT}`);
+// });
+
+module.exports = app;

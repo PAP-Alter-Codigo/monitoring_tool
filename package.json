@@ -5,7 +5,8 @@
   "scripts": {
     "test": "mocha test/**/*.js",
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "zip": "rimraf tool-lambda.zip && node zip-lambda.js"
   },
   "keywords": [],
   "author": "",
@@ -22,14 +23,17 @@
     "express-session": "^1.18.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "serverless-http": "^3.2.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "archiver": "^7.0.1",
     "chai": "^5.2.0",
     "mocha": "^11.2.2",
     "nodemon": "^3.1.10",
+    "rimraf": "^6.0.1",
     "sinon": "^20.0.0",
     "sinon-chai": "^4.0.0"
   }
