@@ -1,89 +1,57 @@
-const { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand, DeleteItemCommand, ScanCommand } = require('@aws-sdk/client-dynamodb');
-const config = require('../config');
+const dynamoose = require('dynamoose');
+const { v4: uuidv4 } = require('uuid');
 
-const client = new DynamoDBClient({
-  region: config.AWS_REGION,
-  credentials: {
-    accessKeyId: config.AWS_ACCESS_KEY,
-    secretAccessKey: config.AWS_SECRET_KEY
-  }
-});
-
-const tableName = 'Articles';
-
-const getAll = async () => {
-  const params = {
-    TableName: tableName
-  };
-  const command = new ScanCommand(params);
-  const data = await client.send(command);
-  return data.Items;
-};
-
-const getById = async (id) => {
-  const params = {
-    TableName: tableName,
-    Key: {
-      _articleId: { N: id.toString() }
-    }
-  };
-  const command = new GetItemCommand(params);
-  const data = await client.send(command);
-  return data.Item;
-};
-
-const create = async (article) => {
-  const params = {
-    TableName: tableName,
-    Item: article
-  };
-  const command = new PutItemCommand(params);
-  await client.send(command);
-};
-
-const update = async (id, article) => {
-  const params = {
-    TableName: tableName,
-    Key: {
-      _articleId: { N: id.toString() }
+const articleSchema = new dynamoose.Schema({
+  id: {
+    type: String,
+    hashKey: true,
+    default: uuidv4
+  },
+  publicationDate: {
+    type: String,
+    required: true,
+  },
+  sourceName: {
+    type: String,
+    required: true,
+  },
+  paywall: {
+    type: Boolean,
+  },
+  headline: {
+    type: String,
+    required: true,
+  },
+  url: {
+    type: String,
+    required: true,
+    index: {
+      global: true,
+      name: 'url-index',
     },
-    UpdateExpression: 'SET #name = :name, #headline = :headline, #url = :url, #paywall = :paywall, #coverageLevel = :coverageLevel, #author = :author',
-    ExpressionAttributeNames: {
-      '#name': 'name',
-      '#headline': 'headline',
-      '#url': 'url',
-      '#paywall': 'paywall',
-      '#coverageLevel': 'coverageLevel',
-      '#author': 'author'
-    },
-    ExpressionAttributeValues: {
-      ':name': { S: article.name },
-      ':headline': { S: article.headline },
-      ':url': { S: article.url },
-      ':paywall': { BOOL: article.paywall },
-      ':coverageLevel': { S: article.coverageLevel },
-      ':author': { S: article.author }
-    }
-  };
-  const command = new UpdateItemCommand(params);
-  await client.send(command);
-};
+  },
+  author: {
+    type: String,
+  },
+  coverageLevel: {
+    type: String,
+  },
+  actorsMentioned: {
+    type: Array,
+    schema: [String],
+  },
+  tags: {
+    type: Array,
+    schema: [String],
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
+})
 
-const remove = async (id) => {
-  const params = {
-    TableName: tableName,
-    Key: {
-      _articleId: { N: id.toString() }
-    }
-  };
-  const command = new DeleteItemCommand(params);
-  await client.send(command);
-};
 
-module.exports = {
-  getAll,
-  getById,
-  create,
-  update,
-  remove
-};
+const Article = dynamoose.model('Articles', articleSchema);
+
+module.exports = Article;

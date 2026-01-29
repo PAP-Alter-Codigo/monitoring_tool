@@ -1,20 +1,65 @@
+require('dotenv').config();
+
 const express = require('express');
-const bodyParser = require('body-parser');
-const articlesRoutes = require('./routes/articles');
-const actorsRoutes = require('./routes/actors');
-const tagsRoutes = require('./routes/tags');
-const locationsRoutes = require('./routes/locations');
+const dynamoose = require('dynamoose');
+const cors = require('cors');
+const session = require('express-session');
+const passport = require('passport');
+require('./utils/googleAuth.js');
+
+const swaggerConfig = require('./swagger.config.json');
+const { serve, setup } = require('swagger-ui-express');
+const swaggerJSDoc = require('swagger-jsdoc');
+
+const routes = require('./routes/index.js');
 
 const app = express();
-
-app.use(bodyParser.json());
-
-app.use('/articles', articlesRoutes);
-app.use('/actors', actorsRoutes);
-app.use('/tags', tagsRoutes);
-app.use('/locations', locationsRoutes);
-
 const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}))
+
+/* Use that in production with HTTPS
+app.use(session({
+  secret: 'your_strong_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: true,        // ⬅️ required if using HTTPS
+    httpOnly: true,      // ⬅️ protects from client-side JS
+    sameSite: 'lax',     // ⬅️ good balance of security & usability
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  }
+}));
+*/
+
+const ddb = new dynamoose.aws.ddb.DynamoDB({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY,
+    secretAccessKey: process.env.AWS_SECRET_KEY
+  },
+});
+dynamoose.aws.ddb.set(ddb);
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your_strong_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === 'production' }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use('/', routes);
+
+const swaggerDocs = swaggerJSDoc(swaggerConfig);
+app.use('/api-docs', serve, setup(swaggerDocs));
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

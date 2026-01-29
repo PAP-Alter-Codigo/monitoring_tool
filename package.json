@@ -1,25 +1,37 @@
 {
-  "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.637.0",
-    "aws-sdk": "^2.1684.0",
-    "csv-parser": "^3.0.0"
-  }
-}
-
-{
   "name": "monitoring_tool",
   "version": "1.0.0",
   "main": "config.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "mocha test/**/*.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.637.0",
+    "aws-sdk": "^2.1684.0",
+    "cors": "^2.8.5",
     "cron": "^3.1.9",
-    "express": "^4.21.1"
+    "csv-parser": "^3.0.0",
+    "dotenv": "^17.2.3",
+    "dynamoose": "^4.0.4",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "chai": "^5.2.0",
+    "mocha": "^11.2.2",
+    "nodemon": "^3.1.10",
+    "sinon": "^20.0.0",
+    "sinon-chai": "^4.0.0"
   }
 }
