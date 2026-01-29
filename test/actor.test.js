@@ -118,4 +118,75 @@ describe('Actor Controller - Unit Test', () => {
         await ActorController.remove(req, res);
         expect(res.status.calledWith(404)).to.be.true;
     });
+
+    // Priority 1: Error handling tests (500 errors)
+    it('should return 500 on database error in getAll', async () => {
+        sandbox.stub(Actor, 'scan').returns({ exec: sandbox.stub().rejects(new Error('Database error')) });
+        await ActorController.getAll(req, res);
+        expect(res.status.calledWith(500)).to.be.true;
+    });
+
+    it('should return 500 on database error in getById', async () => {
+        req.params = { id: 'a1b2c3' };
+        sandbox.stub(Actor, 'get').rejects(new Error('Database error'));
+        await ActorController.getById(req, res);
+        expect(res.status.calledWith(500)).to.be.true;
+    });
+
+    it('should return 500 on database error in create', async () => {
+        req.body = { name: 'Test', tagId: 'tag1', articleIds: ['art1'] };
+        sandbox.stub(Actor.prototype, 'save').rejects(new Error('Database error'));
+        await ActorController.create(req, res);
+        expect(res.status.calledWith(500)).to.be.true;
+    });
+
+    it('should return 500 on database error in update', async () => {
+        req.params = { id: 'a1b2c3' };
+        req.body = { name: 'Updated' };
+        sandbox.stub(Actor, 'get').resolves(fakeActor);
+        sandbox.stub(Actor, 'update').rejects(new Error('Database error'));
+        await ActorController.update(req, res);
+        expect(res.status.calledWith(500)).to.be.true;
+    });
+
+    it('should return 500 on database error in delete', async () => {
+        req.params = { id: 'a1b2c3' };
+        sandbox.stub(Actor, 'get').resolves(fakeActor);
+        sandbox.stub(Actor, 'delete').rejects(new Error('Database error'));
+        await ActorController.remove(req, res);
+        expect(res.status.calledWith(500)).to.be.true;
+    });
+
+    // Priority 3: Edge case tests
+    it('should return 400 for invalid name type in update', async () => {
+        req.params = { id: 'a1b2c3' };
+        req.body = { name: 123 };
+        sandbox.stub(Actor, 'get').resolves(fakeActor);
+        await ActorController.update(req, res);
+        expect(res.status.calledWith(400)).to.be.true;
+    });
+
+    it('should return 400 for invalid tagId type in update', async () => {
+        req.params = { id: 'a1b2c3' };
+        req.body = { tagId: 123 };
+        sandbox.stub(Actor, 'get').resolves(fakeActor);
+        await ActorController.update(req, res);
+        expect(res.status.calledWith(400)).to.be.true;
+    });
+
+    it('should return 400 for invalid articleIds type in update', async () => {
+        req.params = { id: 'a1b2c3' };
+        req.body = { articleIds: 'not-an-array' };
+        sandbox.stub(Actor, 'get').resolves(fakeActor);
+        await ActorController.update(req, res);
+        expect(res.status.calledWith(400)).to.be.true;
+    });
+
+    it('should return 400 for articleIds with non-string elements', async () => {
+        req.params = { id: 'a1b2c3' };
+        req.body = { articleIds: [1, 2, 3] };
+        sandbox.stub(Actor, 'get').resolves(fakeActor);
+        await ActorController.update(req, res);
+        expect(res.status.calledWith(400)).to.be.true;
+    });
 });
