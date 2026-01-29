@@ -16,6 +16,12 @@ const isValidTags = (tags) => Array.isArray(tags);
 
 const isValidLocation = (location) => typeof location === 'string';
 
+const isValidGeolocation = (geolocation) => {
+  if (!Array.isArray(geolocation) || geolocation.length !== 2) return false;
+  const [lat, lon] = geolocation;
+  return typeof lat === 'number' && typeof lon === 'number';
+};
+
 const validateArticlePayload = (article) => {
   if (!article) return 'Article payload is missing.';
   if (!isValidPublicationDate(article.publicationDate)) return 'Invalid publicationDate.';
