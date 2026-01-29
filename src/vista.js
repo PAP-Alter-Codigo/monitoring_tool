@@ -1,5 +1,5 @@
 import { DynamoDBClient, ScanCommand } from '@aws-sdk/client-dynamodb';
-import { AWS_REGION, AWS_ACCESS_KEY, AWS_SECRET_KEY } from './config';
+import { AWS_REGION, AWS_ACCESS_KEY, AWS_SECRET_KEY } from '../config';
 
 const client = new DynamoDBClient({
   region: AWS_REGION,

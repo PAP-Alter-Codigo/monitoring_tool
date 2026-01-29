@@ -10,5 +10,5 @@
             { "url": "http://localhost:3000" }
         ]
     },
-    "apis": ["./routes/*.js"]
+    "apis": ["./src/routes/*.js"]
 }

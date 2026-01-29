@@ -5,16 +5,20 @@ const dynamoose = require('dynamoose');
 const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
-require('./utils/googleAuth.js');
 
-const swaggerConfig = require('./swagger.config.json');
+const swaggerConfig = require('../swagger.config.json');
 const { serve, setup } = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
 
 const routes = require('./routes/index.js');
 
+require('./utils/googleAuth.js');
+
+console.log("ENV CHECK:", process.cwd(), process.env.PORT);
+
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3005;
 
 app.use(express.json());
 app.use(cors({
@@ -60,6 +64,4 @@ app.use('/', routes);
 const swaggerDocs = swaggerJSDoc(swaggerConfig);
 app.use('/api-docs', serve, setup(swaggerDocs));
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+module.exports = app;
