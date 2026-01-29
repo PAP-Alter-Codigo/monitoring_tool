@@ -1,7 +1,5 @@
-const config = require('../config');
-
 function ensureAuthenticated(req, res, next) {
-    if(!config.IS_PRODUCTION){
+    if(process.env.IS_PRODUCTION !== 'true'){
         return next();
     }
     if (req.isAuthenticated && req.isAuthenticated()) {

@@ -21,6 +21,6 @@ const actorSchema = new dynamoose.Schema({
   },
 });
 
-Actor = dynamoose.model("Actors", actorSchema);
+const Actor = dynamoose.model("Actors", actorSchema);
 
 module.exports = Actor;
