@@ -90,4 +90,84 @@ describe('Location Controller Unit Test', () => {
     await LocationController.remove(req, res);
     expect(res.status.calledWith(404)).to.be.true;
   });
+
+  // Priority 1: Error handling tests (500 errors)
+  it('should return 500 on database error in getAll', async () => {
+    sandbox.stub(Location, 'scan').returns({ exec: sandbox.stub().rejects(new Error('Database error')) });
+    await LocationController.getAll(req, res);
+    expect(res.status.calledWith(500)).to.be.true;
+  });
+
+  it('should return 500 on database error in getById', async () => {
+    req.params = { id: 'abc123' };
+    sandbox.stub(Location, 'get').rejects(new Error('Database error'));
+    await LocationController.getById(req, res);
+    expect(res.status.calledWith(500)).to.be.true;
+  });
+
+  it('should return 500 on database error in create', async () => {
+    req.body = { name: 'Test', geolocation: [20, -103] };
+    sandbox.stub(Location.prototype, 'save').rejects(new Error('Database error'));
+    await LocationController.create(req, res);
+    expect(res.status.calledWith(500)).to.be.true;
+  });
+
+  it('should return 500 on database error in update', async () => {
+    req.params = { id: 'abc123' };
+    req.body = { name: 'Updated' };
+    sandbox.stub(Location, 'get').resolves(fakeLocation);
+    sandbox.stub(Location, 'update').rejects(new Error('Database error'));
+    await LocationController.update(req, res);
+    expect(res.status.calledWith(500)).to.be.true;
+  });
+
+  it('should return 500 on database error in delete', async () => {
+    req.params = { id: 'abc123' };
+    sandbox.stub(Location, 'get').resolves(fakeLocation);
+    sandbox.stub(Location, 'delete').rejects(new Error('Database error'));
+    await LocationController.remove(req, res);
+    expect(res.status.calledWith(500)).to.be.true;
+  });
+
+  // Priority 3: Edge case tests
+  it('should return 400 for empty update body', async () => {
+    req.params = { id: 'abc123' };
+    req.body = {};
+    sandbox.stub(Location, 'get').resolves(fakeLocation);
+    await LocationController.update(req, res);
+    expect(res.status.calledWith(400)).to.be.true;
+  });
+
+  it('should return 400 for geolocation with only one element', async () => {
+    req.body = { name: 'Test', geolocation: [20] };
+    await LocationController.create(req, res);
+    expect(res.status.calledWith(400)).to.be.true;
+  });
+
+  it('should return 400 for geolocation with non-numeric values', async () => {
+    req.body = { name: 'Test', geolocation: ['a', 'b'] };
+    await LocationController.create(req, res);
+    expect(res.status.calledWith(400)).to.be.true;
+  });
+
+  it('should return 400 for geolocation with more than 2 elements', async () => {
+    req.body = { name: 'Test', geolocation: [20, -103, 50] };
+    await LocationController.create(req, res);
+    expect(res.status.calledWith(400)).to.be.true;
+  });
+
+  it('should return 400 for invalid geolocation in update', async () => {
+    req.params = { id: 'abc123' };
+    req.body = { geolocation: [20] };
+    sandbox.stub(Location, 'get').resolves(fakeLocation);
+    await LocationController.update(req, res);
+    expect(res.status.calledWith(400)).to.be.true;
+  });
+
+  it('should return 422 on validation error', async () => {
+    req.body = { name: 'Test', geolocation: [20, -103] };
+    sandbox.stub(Location.prototype, 'save').rejects(new Error('VALIDATION_ERROR: Invalid format'));
+    await LocationController.create(req, res);
+    expect(res.status.calledWith(422)).to.be.true;
+  });
 });

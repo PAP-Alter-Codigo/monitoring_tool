@@ -157,4 +157,94 @@ describe('Article - Unit Testing', () => {
       expect(res.status.calledWith(404)).to.be.true;
     });
 
+    // Priority 1: Error handling tests (500 errors)
+    it('should return 500 on database error in getAll', async () => {
+      sandbox.stub(Article, 'scan').returns({ exec: sandbox.stub().rejects(new Error('Database error')) });
+      await articleController.getAll(req, res);
+      expect(res.status.calledWith(500)).to.be.true;
+    });
+
+    it('should return 500 on database error in getById', async () => {
+      req.params = { id: 'abc101' };
+      sandbox.stub(Article, 'get').rejects(new Error('Database error'));
+      await articleController.getById(req, res);
+      expect(res.status.calledWith(500)).to.be.true;
+    });
+
+    it('should return 500 on database error in create', async () => {
+      req.body = mockArticle;
+      sandbox.stub(Article, 'query').returns({
+        eq: () => ({ exec: async () => [] })
+      });
+      sandbox.stub(Article.prototype, 'save').rejects(new Error('Database error'));
+      await articleController.create(req, res);
+      expect(res.status.calledWith(500)).to.be.true;
+    });
+
+    it('should return 500 on database error in update', async () => {
+      req.params = { id: 'abc101' };
+      req.body = { headline: 'Updated' };
+      sandbox.stub(Article, 'get').resolves(mockArticle);
+      sandbox.stub(Article, 'update').rejects(new Error('Database error'));
+      await articleController.update(req, res);
+      expect(res.status.calledWith(500)).to.be.true;
+    });
+
+    it('should return 500 on database error in delete', async () => {
+      req.params = { id: 'abc101' };
+      sandbox.stub(Article, 'get').resolves(mockArticle);
+      sandbox.stub(Article, 'delete').rejects(new Error('Database error'));
+      await articleController.remove(req, res);
+      expect(res.status.calledWith(500)).to.be.true;
+    });
+
+    // Priority 3: Edge case tests
+    it('should return 400 for empty update body', async () => {
+      req.params = { id: 'abc101' };
+      req.body = {};
+      sandbox.stub(Article, 'get').resolves(mockArticle);
+      await articleController.update(req, res);
+      expect(res.status.calledWith(400)).to.be.true;
+    });
+
+    it('should return 400 for invalid paywall type in update', async () => {
+      req.params = { id: 'abc101' };
+      req.body = { paywall: 'not-a-boolean' };
+      sandbox.stub(Article, 'get').resolves(mockArticle);
+      await articleController.update(req, res);
+      expect(res.status.calledWith(400)).to.be.true;
+    });
+
+    it('should return 400 for invalid actorsMentioned type in update', async () => {
+      req.params = { id: 'abc101' };
+      req.body = { actorsMentioned: 'not-an-array' };
+      sandbox.stub(Article, 'get').resolves(mockArticle);
+      await articleController.update(req, res);
+      expect(res.status.calledWith(400)).to.be.true;
+    });
+
+    it('should return 400 for invalid tags type in update', async () => {
+      req.params = { id: 'abc101' };
+      req.body = { tags: 'not-an-array' };
+      sandbox.stub(Article, 'get').resolves(mockArticle);
+      await articleController.update(req, res);
+      expect(res.status.calledWith(400)).to.be.true;
+    });
+
+    it('should return 400 for invalid geolocation format', async () => {
+      req.params = { id: 'abc101' };
+      req.body = { geolocation: [1] };
+      sandbox.stub(Article, 'get').resolves(mockArticle);
+      await articleController.update(req, res);
+      expect(res.status.calledWith(400)).to.be.true;
+    });
+
+    it('should return 400 for geolocation with non-numeric values', async () => {
+      req.params = { id: 'abc101' };
+      req.body = { geolocation: ['a', 'b'] };
+      sandbox.stub(Article, 'get').resolves(mockArticle);
+      await articleController.update(req, res);
+      expect(res.status.calledWith(400)).to.be.true;
+    });
+
 });
