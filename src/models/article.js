@@ -51,7 +51,12 @@ const articleSchema = new dynamoose.Schema({
   },
 })
 
+const isProd = process.env.IS_PRODUCTION || true;
 
-const Article = dynamoose.model('Articles', articleSchema);
+const Article = dynamoose.model('Articles', articleSchema, {
+  create: !isProd,
+  update: !isProd,
+  waitForActive: !isProd,
+});
 
 module.exports = Article;

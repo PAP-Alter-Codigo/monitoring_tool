@@ -13,6 +13,12 @@ const tagSchema = new dynamoose.Schema({
   },
 });
 
-const Tag = dynamoose.model("Tags", tagSchema);
+const isProd = process.env.IS_PRODUCTION || true;
+
+const Tag = dynamoose.model("Tags", tagSchema, {
+  create: !isProd,
+  update: !isProd,
+  waitForActive: !isProd,
+});
 
 module.exports = Tag;

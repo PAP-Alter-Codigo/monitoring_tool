@@ -14,9 +14,6 @@ const routes = require('./routes/index.js');
 
 require('./utils/googleAuth.js');
 
-console.log("ENV CHECK:", process.cwd(), process.env.PORT);
-
-
 const app = express();
 const PORT = process.env.PORT || 3005;
 
@@ -40,14 +37,19 @@ app.use(session({
 }));
 */
 
-const ddb = new dynamoose.aws.ddb.DynamoDB({
-  region: process.env.AWS_REGION,
-  credentials: {
+// DYNAMO CONFIG
+const opts = { region: process.env.AWS_REGION };
+
+if (process.env.AWS_ACCESS_KEY && process.env.AWS_SECRET_KEY) {
+  opts.credentials = {
     accessKeyId: process.env.AWS_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_SECRET_KEY
-  },
-});
+    secretAccessKey: process.env.AWS_SECRET_KEY,
+  };
+}
+
+const ddb = new dynamoose.aws.ddb.DynamoDB(opts);
 dynamoose.aws.ddb.set(ddb);
+
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your_strong_secret',

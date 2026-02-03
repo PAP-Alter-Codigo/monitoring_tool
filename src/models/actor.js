@@ -21,6 +21,12 @@ const actorSchema = new dynamoose.Schema({
   },
 });
 
-const Actor = dynamoose.model("Actors", actorSchema);
+const isProd = process.env.IS_PRODUCTION || true;
+
+const Actor = dynamoose.model("Actors", actorSchema, {
+  create: !isProd,
+  update: !isProd,
+  waitForActive: !isProd,
+});
 
 module.exports = Actor;

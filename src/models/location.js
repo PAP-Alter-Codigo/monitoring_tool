@@ -19,6 +19,12 @@ const locationSchema = new dynamoose.Schema({
   }
 });
 
-const Location = dynamoose.model("Locations", locationSchema);
+const isProd = process.env.IS_PRODUCTION || true;
+
+const Location = dynamoose.model("Locations", locationSchema, {
+  create: !isProd,
+  update: !isProd,
+  waitForActive: !isProd,
+});
 
 module.exports = Location;
