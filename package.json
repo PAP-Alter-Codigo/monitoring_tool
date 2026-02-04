@@ -1,11 +1,11 @@
 {
   "name": "monitoring_tool",
   "version": "1.0.0",
-  "main": "config.js",
+  "main": "index.js",
   "scripts": {
     "test": "mocha test/**/*.js",
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node src/local.js",
+    "dev": "nodemon src/local.js"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +23,7 @@
     "express-session": "^1.18.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "serverless-http": "^4.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0"
