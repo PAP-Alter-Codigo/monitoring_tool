@@ -15,27 +15,12 @@ const routes = require('./routes/index.js');
 require('./utils/googleAuth.js');
 
 const app = express();
-const PORT = process.env.PORT || 3005;
 
 app.use(express.json());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }))
-
-/* Use that in production with HTTPS
-app.use(session({
-  secret: 'your_strong_secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: true,        // ⬅️ required if using HTTPS
-    httpOnly: true,      // ⬅️ protects from client-side JS
-    sameSite: 'lax',     // ⬅️ good balance of security & usability
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  }
-}));
-*/
 
 // DYNAMO CONFIG
 const opts = { region: process.env.AWS_REGION };
@@ -49,7 +34,6 @@ if (process.env.AWS_ACCESS_KEY && process.env.AWS_SECRET_KEY) {
 
 const ddb = new dynamoose.aws.ddb.DynamoDB(opts);
 dynamoose.aws.ddb.set(ddb);
-
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your_strong_secret',
