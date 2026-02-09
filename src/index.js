@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const cookieParser = require("cookie-parser");
 const dynamoose = require('dynamoose');
 const cors = require('cors');
 const session = require('express-session');
@@ -15,6 +16,8 @@ const routes = require('./routes/index.js');
 require('./utils/googleAuth.js');
 
 const app = express();
+
+app.use(cookieParser());
 
 app.use(express.json());
 app.use(cors({
