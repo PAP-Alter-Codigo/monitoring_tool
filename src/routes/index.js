@@ -1,14 +1,18 @@
 const express = require('express');
 const router = express.Router();
-
 const authRoutes = require('./authRoutes');
 const articlesRoutes = require('./articleRoutes');
 const actorsRoutes = require('./actorRoutes');
 const tagsRoutes = require('./tagRoutes');
 const locationsRoutes = require('./locationRoutes');
+const { authJwtCookie } = require('../middlewares/authJwt');
 
 
 router.use('/auth', authRoutes);
+
+//MIDDLEWARE
+router.use(authJwtCookie);
+
 router.use('/articles', articlesRoutes);
 router.use('/actors', actorsRoutes);
 router.use('/tags', tagsRoutes);
