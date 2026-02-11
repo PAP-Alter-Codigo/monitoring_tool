@@ -1,0 +1,19 @@
+name: Only allow qa -> main
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Block PRs not coming from qa
+        run: |
+          echo "Base: ${{ github.event.pull_request.base.ref }}"
+          echo "Head: ${{ github.event.pull_request.head.ref }}"
+          if [ "${{ github.event.pull_request.head.ref }}" != "qa" ]; then
+            echo "Error: Only PRs from 'qa' are allowed to merge into 'main'."
+            exit 1
+          fi
+          echo "Success: PR source branch is qa. Allowed."
