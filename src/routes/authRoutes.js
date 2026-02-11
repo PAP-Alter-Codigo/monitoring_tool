@@ -10,7 +10,7 @@ router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
     const token = signAccessToken(req.user);
-    const isProd = process.env.NODE_ENV === "production";
+    const isProd = process.env.IS_PRODUCTION;
 
     res.cookie("access_token", token, {
       httpOnly: true,
@@ -21,13 +21,13 @@ router.get('/google/callback',
     });
 
     const frontend = process.env.FRONTEND_URL || "http://localhost:5173";
-    res.redirect(`${frontend}/dashboard?}`);
+    res.redirect(`${frontend}/dashboard`);
   }
 );
 
 router.get('/logout', (req, res) => {
   req.logout(() => {
-    const isProd = process.env.NODE_ENV === "production";
+    const isProd = process.env.IS_PRODUCTION;
 
     res.clearCookie("access_token", {
       httpOnly: true,
