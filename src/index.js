@@ -42,7 +42,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your_strong_secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
+  cookie: { secure: process.env.IS_PRODUCTION }
 }));
 
 app.use(passport.initialize());
