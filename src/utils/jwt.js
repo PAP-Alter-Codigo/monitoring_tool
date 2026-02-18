@@ -7,7 +7,6 @@ function signAccessToken(user) {
     sub: String(user.id || user._id || user.googleId || user.email),
     email: user.email,
     name: user.name || user.displayName,
-    // roles: user.roles || [], // si manejas roles
   };
 
   return jwt.sign(payload, process.env.JWT_SECRET, {
