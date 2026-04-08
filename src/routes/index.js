@@ -6,8 +6,10 @@ const articlesRoutes = require('./articleRoutes');
 const actorsRoutes = require('./actorRoutes');
 const tagsRoutes = require('./tagRoutes');
 const locationsRoutes = require('./locationRoutes');
+const sourceUrlRoutes = require('./sourceUrlRoutes');
 const { authJwtCookie } = require('../middlewares/authJwt');
 const { adminAllowlist } = require("../middlewares/adminAllowList");
+const { apiKeyAuth } = require('../middlewares/apiKey');
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .split(",")
@@ -18,7 +20,12 @@ router.use('/auth', authRoutes);
 router.use('/auth', devAuthRoutes); // dev routes
 
 //MIDDLEWARE
-router.use(authJwtCookie);
+router.use((req, res, next) => {
+  if (req.headers['x-api-key']) {
+    return apiKeyAuth(req, res, next);
+  }
+  return authJwtCookie(req, res, next);
+});
 
 router.use(
   adminAllowlist({
@@ -30,5 +37,6 @@ router.use('/articles', articlesRoutes);
 router.use('/actors', actorsRoutes);
 router.use('/tags', tagsRoutes);
 router.use('/locations', locationsRoutes);
+router.use('/source-urls', sourceUrlRoutes);
 
 module.exports = router;
