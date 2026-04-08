@@ -41,3 +41,7 @@ Swagger documentation is available at: http://localhost:3000/api-docs
 ```bash
 npm test
 ```
+
+## Deployment
+- generar un zip del proyecto sin incluir el .env o .github
+- en aws lambda en la parte de code source selecciona upload from .zip
