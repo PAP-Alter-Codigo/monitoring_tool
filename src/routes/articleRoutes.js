@@ -75,11 +75,17 @@ router.get('/:id', ensureAuthenticated, articlesController.getById);
  *                 type: array
  *                 items:
  *                   type: string
- *               geolocation:
+ *               location:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of Location IDs
+ *               summary:
  *                 type: string
+ *                 nullable: true
  *     responses:
  *       '201':
- *         description: Article successfully created
+ *         description: Article successfully created (origin set to "user" automatically)
  *       '400':
  *         description: Bad request
  *       '409':
@@ -131,8 +137,14 @@ router.post('/', articlesController.create);
  *                 type: array
  *                 items:
  *                   type: string
- *               geolocation:
+ *               location:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of Location IDs
+ *               summary:
  *                 type: string
+ *                 nullable: true
  *     responses:
  *       '200':
  *         description: Article successfully updated

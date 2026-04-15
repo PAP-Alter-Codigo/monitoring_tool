@@ -7,6 +7,7 @@ const actorsRoutes = require('./actorRoutes');
 const tagsRoutes = require('./tagRoutes');
 const locationsRoutes = require('./locationRoutes');
 const sourceUrlRoutes = require('./sourceUrlRoutes');
+const munninRoutes = require('./munninRoutes');
 const { authJwtCookie } = require('../middlewares/authJwt');
 const { adminAllowlist } = require("../middlewares/adminAllowList");
 const { apiKeyAuth } = require('../middlewares/apiKey');
@@ -18,6 +19,9 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
 
 router.use('/auth', authRoutes);
 router.use('/auth', devAuthRoutes); // dev routes
+
+// Munnin routes bypass global middleware (auth handled internally)
+router.use('/articles', munninRoutes);
 
 //MIDDLEWARE
 router.use((req, res, next) => {

@@ -46,8 +46,14 @@ const articleSchema = new dynamoose.Schema({
     required: true,
   },
   location: {
+    type: Array,
+    schema: [String],
+  },
+  summary: {
     type: String,
-    required: true,
+  },
+  origin: {
+    type: String,
   },
 })
 
