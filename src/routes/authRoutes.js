@@ -16,7 +16,7 @@ router.get('/google/callback',
       httpOnly: true,
       secure: isProd,          // true en prod (HTTPS), false en local
       sameSite: isProd ? "none" : "lax",
-      maxAge: 15 * 60 * 1000,  // 15 min
+      maxAge: 45 * 60 * 1000,  // 15 min
       path: "/",
     });
 

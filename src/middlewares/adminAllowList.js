@@ -15,7 +15,6 @@ function adminAllowlist(options = {}) {
 
     // Debe venir el user del middleware JWT
     const email = req.user?.email ? String(req.user.email).toLowerCase() : null;
-
     if (!email) {
       return res.status(401).json({ message: "Not authenticated" });
     }
