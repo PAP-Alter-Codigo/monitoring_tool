@@ -2,12 +2,16 @@
 const jwt = require("jsonwebtoken");
 
 function signAccessToken(user) {
-  // Ajusta estos campos a tu modelo real de usuario
+  // Google OAuth profile uses emails[0].value; plain objects use email directly
+  const email =
+    user.email ??
+    user.emails?.[0]?.value ??
+    null;
+
   const payload = {
-    sub: String(user.id || user._id || user.googleId || user.email),
-    email: user.email,
+    sub: String(user.id || user._id || user.googleId || email),
+    email,
     name: user.name || user.displayName,
-    // roles: user.roles || [], // si manejas roles
   };
 
   return jwt.sign(payload, process.env.JWT_SECRET, {

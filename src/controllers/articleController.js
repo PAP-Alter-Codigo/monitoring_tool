@@ -1,4 +1,6 @@
 const Article = require('../models/article.js');
+const Location = require('../models/location.js');
+const Tag = require('../models/tag.js');
 
 // Se usa en POST (create)
 const isValidPublicationDate = (date) => typeof date === 'string';
@@ -14,13 +16,8 @@ const isValidActorsMentioned = (actors) => Array.isArray(actors);
 
 const isValidTags = (tags) => Array.isArray(tags);
 
-const isValidLocation = (location) => typeof location === 'string';
+const isValidLocation = (location) => Array.isArray(location) && location.every(id => typeof id === 'string');
 
-const isValidGeolocation = (geolocation) => {
-  if (!Array.isArray(geolocation) || geolocation.length !== 2) return false;
-  const [lat, lon] = geolocation;
-  return typeof lat === 'number' && typeof lon === 'number';
-};
 
 const validateArticlePayload = (article) => {
   if (!article) return 'Article payload is missing.';
@@ -33,14 +30,32 @@ const validateArticlePayload = (article) => {
   if (!isValidCoverageLevel(article.coverageLevel)) return 'Invalid coverageLevel.';
   if (!isValidActorsMentioned(article.actorsMentioned)) return 'Invalid actorsMentioned.';
   if (!isValidTags(article.tags)) return 'Invalid tags.';
-  if (!isValidLocation(article.location)) return 'Invalid location.';
+  if (article.location !== undefined && !isValidLocation(article.location)) return 'Invalid location.';
   return null;
+};
+
+const populateLocations = async (article) => {
+  const plain = JSON.parse(JSON.stringify(article));
+  const locationIds = plain.location || [];
+  const locations = await Promise.all(
+    locationIds.map(id => Location.get({ id }).catch(() => null))
+  );
+  plain.location = locations.filter(Boolean);
+  return plain;
+};
+
+const parseDate = (dateStr) => {
+  if (!dateStr) return 0;
+  const [day, month, year] = dateStr.split('/');
+  return new Date(Number(year), Number(month) - 1, Number(day)).getTime();
 };
 
 const getAll = async (req, res) => {
   try {
     const articles = await Article.scan().exec();
-    res.status(200).json(articles);
+    const populated = await Promise.all(articles.map(populateLocations));
+    populated.sort((a, b) => parseDate(b.publicationDate) - parseDate(a.publicationDate));
+    res.status(200).json(populated);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -52,11 +67,11 @@ const getById = async (req, res) => {
     if (!article) {
       return res.status(404).json({ error: `Article with ID ${req.params.id} not found.` });
     }
-    res.status(200).json(article);
+    const populated = await populateLocations(article);
+    res.status(200).json(populated);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-
 }
 const create = async (req, res) => {
   try {
@@ -82,7 +97,9 @@ const create = async (req, res) => {
       coverageLevel: article.coverageLevel || '',
       actorsMentioned: article.actorsMentioned,
       tags: article.tags,
-      location: article.location
+      location: article.location || [],
+      origin: 'user',
+      ...(article.summary !== undefined && { summary: article.summary }),
     });
 
     await newArticle.save();
@@ -94,7 +111,7 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   const { id } = req.params;
-  const { publicationDate, sourceName, paywall, headline, url, author, coverageLevel, actorsMentioned, tags, geolocation } = req.body;
+  const { publicationDate, sourceName, paywall, headline, url, author, coverageLevel, actorsMentioned, tags, location, summary } = req.body;
 
   try {
     const existing = await Article.get({id});
@@ -167,11 +184,18 @@ const update = async (req, res) => {
       updateData.tags = tags;
     }
 
-    if (geolocation) {
-      if(!isValidGeolocation(geolocation)) {
-        return res.status(400).json({ error: 'Invalid geolocation.' });
+    if (location !== undefined) {
+      if (!isValidLocation(location)) {
+        return res.status(400).json({ error: 'Invalid location. Must be an array of strings.' });
       }
-      updateData.geolocation = geolocation;
+      updateData.location = location;
+    }
+
+    if (summary !== undefined) {
+      if (typeof summary !== 'string') {
+        return res.status(400).json({ error: 'Invalid summary.' });
+      }
+      updateData.summary = summary;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -201,10 +225,93 @@ const remove = async (req, res) => {
   }
 };
 
+const formatName = (name) => name.trim().toUpperCase().replace(/ /g, '_');
+
+const resolveLocationIds = async (locationNames) => {
+  const results = await Promise.all(
+    locationNames.map(({ name }) =>
+      Location.scan('name').eq(formatName(name)).exec()
+    )
+  );
+  locationNames.forEach(({ name }, i) => {
+    if (!results[i] || results[i].length === 0) {
+      console.warn(`[muninn] Location not found in DB — skipped: "${name}" (normalized: "${formatName(name)}")`);
+    }
+  });
+  return results.flat().map(l => l.id);
+};
+
+const resolveTagIds = async (tagNames) => {
+  const results = await Promise.all(
+    tagNames.map(({ name }) =>
+      Tag.scan('name').eq(formatName(name)).exec()
+    )
+  );
+  tagNames.forEach(({ name }, i) => {
+    if (!results[i] || results[i].length === 0) {
+      console.warn(`[muninn] Tag not found in DB — skipped: "${name}" (normalized: "${formatName(name)}")`);
+    }
+  });
+  return results.flat().map(t => t.id);
+};
+
+const validateMunninPayload = (article) => {
+  if (!article) return 'Article payload is missing.';
+  if (!isValidPublicationDate(article.publicationDate)) return 'Invalid publicationDate.';
+  if (!isValidSourceName(article.sourceName)) return 'Invalid sourceName.';
+  if (!isValidHeadline(article.headline)) return 'Invalid headline.';
+  if (!isValidUrl(article.url)) return 'Invalid url.';
+  if (!Array.isArray(article.location)) return 'Invalid location. Must be an array of { name } objects.';
+  if (!Array.isArray(article.tags)) return 'Invalid tags. Must be an array of { name } objects.';
+  return null;
+};
+
+const createFromMunnin = async (req, res) => {
+  try {
+    const article = req.body;
+
+    const validationError = validateMunninPayload(article);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
+    }
+
+    const exists = await Article.query('url').eq(article.url).exec();
+    if (exists && exists.length > 0) {
+      return res.status(409).json({ error: `Article with URL ${article.url} already exists.` });
+    }
+
+    const [locationIds, tagIds] = await Promise.all([
+      resolveLocationIds(article.location),
+      resolveTagIds(article.tags),
+    ]);
+
+    const newArticle = new Article({
+      publicationDate: article.publicationDate,
+      sourceName: article.sourceName,
+      paywall: false,
+      headline: article.headline,
+      url: article.url,
+      author: article.author || '',
+      coverageLevel: article.coverageLevel || '',
+      actorsMentioned: [],
+      tags: tagIds,
+      location: locationIds,
+      origin: 'muninn',
+      ...(article.summary !== undefined && { summary: article.summary }),
+    });
+
+    await newArticle.save();
+    res.status(201).json({ message: 'Article successfully created.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAll,
   getById,
   create,
   update,
-  remove
+  remove,
+  createFromMunnin,
 };
