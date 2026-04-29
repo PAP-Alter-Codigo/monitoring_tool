@@ -43,5 +43,107 @@ npm test
 ```
 
 ## Deployment
-- generar un zip del proyecto sin incluir el .env o .github
-- en aws lambda en la parte de code source selecciona upload from .zip
+
+El despliegue de este proyecto se realiza subiendo un archivo `.zip` directamente a una función de AWS Lambda.
+
+> Importante: el archivo `.env` no debe subirse dentro del `.zip`.  
+> Las variables de entorno deben configurarse directamente en AWS Lambda o mediante AWS Secrets Manager.
+
+---
+
+### 1. Preparar el proyecto para producción
+
+Antes de generar el `.zip`, instala las dependencias del proyecto:
+
+```bash
+npm install
+```
+
+### 2. Crear el archivo `.zip`
+
+El `.zip` debe incluir el código necesario para ejecutar la Lambda y sus dependencias.
+
+No incluir:
+
+```txt
+.env
+.git
+.github
+node_modules de desarrollo innecesarios
+README innecesarios
+archivos de pruebas
+```
+
+Sí incluir:
+
+```txt
+package.json
+package-lock.json
+node_modules
+dist o archivos fuente necesarios
+```
+
+### 3. Subir el `.zip` a AWS Lambda
+
+1. Ingresa a la consola de **AWS**.
+
+2. Ve al servicio **Lambda**.
+
+3. Selecciona la función correspondiente al proyecto:
+
+```txt
+monitoring_tool
+```
+
+4. Entra a la pestaña:
+
+```txt
+Code
+```
+
+5. En la sección **Code source**, selecciona:
+
+```txt
+Upload from
+```
+
+6. Selecciona:
+
+```txt
+.zip file
+```
+
+7. Sube el archivo:
+
+```txt
+monitoring_tool.zip
+```
+
+8. Haz clic en:
+
+```txt
+Save
+```
+
+---
+
+### 4. Configurar variables de entorno
+
+El archivo `.env` no se sube a Lambda.
+
+Las variables deben configurarse desde:
+
+```txt
+Configuration > Environment variables
+```
+
+Variables requeridas:
+
+```env
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=
+SESSION_SECRET=
+IS_PRODUCTION=true
+FRONTEND_URL=
+```
