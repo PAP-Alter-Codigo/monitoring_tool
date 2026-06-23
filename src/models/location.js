@@ -19,7 +19,7 @@ const locationSchema = new dynamoose.Schema({
   }
 });
 
-const isProd = process.env.IS_PRODUCTION || true;
+const isProd = process.env.IS_PRODUCTION === "true";
 
 const Location = dynamoose.model("Locations", locationSchema, {
   create: !isProd,

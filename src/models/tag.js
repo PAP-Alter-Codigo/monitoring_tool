@@ -13,7 +13,7 @@ const tagSchema = new dynamoose.Schema({
   },
 });
 
-const isProd = process.env.IS_PRODUCTION || true;
+const isProd = process.env.IS_PRODUCTION === "true";
 
 const Tag = dynamoose.model("Tags", tagSchema, {
   create: !isProd,

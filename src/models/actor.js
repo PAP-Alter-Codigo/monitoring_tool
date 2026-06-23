@@ -21,7 +21,7 @@ const actorSchema = new dynamoose.Schema({
   },
 });
 
-const isProd = process.env.IS_PRODUCTION || true;
+const isProd = process.env.IS_PRODUCTION === "true";
 
 const Actor = dynamoose.model("Actors", actorSchema, {
   create: !isProd,
