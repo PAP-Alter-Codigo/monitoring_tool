@@ -34,7 +34,7 @@ const sourceUrlSchema = new dynamoose.Schema(
   }
 );
 
-const isProd = process.env.IS_PRODUCTION || true;
+const isProd = process.env.IS_PRODUCTION === "true";
 
 const SourceUrl = dynamoose.model("SourceUrls", sourceUrlSchema, {
   create: !isProd,
