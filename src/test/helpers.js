@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const sinon = require('sinon');
 const authJwtModule = require('../middlewares/authJwt');
 const apiKeyModule = require('../middlewares/apiKey');
 const adminAllowlistModule = require('../middlewares/adminAllowList');

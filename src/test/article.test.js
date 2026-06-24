@@ -18,7 +18,7 @@ describe('Article - Unit Testing', () => {
     coverageLevel: "regional",
     actorsMentioned: ["1", "3"],
     tags: ["2", "4"],
-    location: "20"
+    location: ["20"]
   };
 
   beforeEach(() => {
@@ -39,16 +39,23 @@ describe('Article - Unit Testing', () => {
     const execStub = sandbox.stub().resolves([mockArticle]);
     sandbox.stub(Article, 'scan').returns({ exec: execStub });
     await articleController.getAll(req, res);
-    expect(res.status.called).to.be.true;
-    expect(res.json.called).to.be.true;
+    expect(res.status.calledWith(200)).to.be.true;
+    expect(res.json.calledOnce).to.be.true;
+    const callArgs = res.json.getCall(0).args[0];
+    expect(callArgs).to.be.an('array');
+    expect(callArgs[0]).to.have.property('id', 'abc101');
+    expect(callArgs[0]).to.have.property('location').that.is.an('array');
   });
 
   it('should get an article by id', async () => {
     req.params = { id: 'abc101' };
     sandbox.stub(Article, 'get').resolves(mockArticle);
     await articleController.getById(req, res);
-    expect(res.status.called).to.be.true;
-    expect(res.json.called).to.be.true;
+    expect(res.status.calledWith(200)).to.be.true;
+    expect(res.json.calledOnce).to.be.true;
+    const callArgs = res.json.getCall(0).args[0];
+    expect(callArgs).to.have.property('id', 'abc101');
+    expect(callArgs).to.have.property('location').that.is.an('array');
   });
 
   it('should return 404 if not found', async () => {
