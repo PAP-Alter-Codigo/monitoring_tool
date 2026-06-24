@@ -3,18 +3,24 @@ const expect = chai.expect;
 const sinon = require('sinon');
 const request = require('supertest');
 const express = require('express');
-const routes = require('../routes/index');
 const Actor = require('../models/actor');
 const Article = require('../models/article');
 const Location = require('../models/location');
 const Tag = require('../models/tag');
+const { mockAuthMiddleware } = require('./helpers');
 
 describe('Routes Integration Tests', () => {
   let app;
   let sandbox;
+  let routes;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
+    // Mock auth middleware before loading routes
+    mockAuthMiddleware(sandbox, 'test@admin.com');
+    // Clear cache and reload routes with mocked middleware
+    delete require.cache[require.resolve('../routes/index')];
+    routes = require('../routes/index');
     app = express();
     app.use(express.json());
     app.use('/', routes);
@@ -104,9 +110,10 @@ describe('Routes Integration Tests', () => {
         coverageLevel: 'local',
         actorsMentioned: [],
         tags: [],
-        location: 'loc1'
+        location: ['loc1']
       }];
       sandbox.stub(Article, 'scan').returns({ exec: sandbox.stub().resolves(mockArticles) });
+      sandbox.stub(Location, 'get').resolves(null);
 
       const res = await request(app).get('/articles');
       expect(res.status).to.equal(200);
@@ -116,9 +123,9 @@ describe('Routes Integration Tests', () => {
 
   describe('POST /articles', () => {
     it('should create a new article', async () => {
-      sandbox.stub(Article, 'query').returns({
-        eq: () => ({ exec: async () => [] })
-      });
+      const execStub = sandbox.stub().resolves([]);
+      const eqStub = sandbox.stub().returns({ exec: execStub });
+      sandbox.stub(Article, 'query').returns({ eq: eqStub });
       sandbox.stub(Article.prototype, 'save').resolves();
 
       const res = await request(app)
@@ -133,16 +140,16 @@ describe('Routes Integration Tests', () => {
           coverageLevel: 'local',
           actorsMentioned: [],
           tags: ['tag1'],
-          location: 'loc1'
+          location: ['loc1']
         });
 
       expect(res.status).to.equal(201);
     });
 
     it('should return 409 for duplicate URL', async () => {
-      sandbox.stub(Article, 'query').returns({
-        eq: () => ({ exec: async () => [{ id: '1' }] })
-      });
+      const execStub = sandbox.stub().resolves([{ id: '1' }]);
+      const eqStub = sandbox.stub().returns({ exec: execStub });
+      sandbox.stub(Article, 'query').returns({ eq: eqStub });
 
       const res = await request(app)
         .post('/articles')
@@ -156,7 +163,7 @@ describe('Routes Integration Tests', () => {
           coverageLevel: 'local',
           actorsMentioned: [],
           tags: ['tag1'],
-          location: 'loc1'
+          location: ['loc1']
         });
 
       expect(res.status).to.equal(409);
