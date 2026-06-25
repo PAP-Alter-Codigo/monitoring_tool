@@ -1,7 +1,6 @@
 name: Deploy to Lambda
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
@@ -27,7 +26,7 @@ jobs:
         run: npm i --omit=dev
 
       - name: Create deployment package
-        run: zip -r function.zip src package.json node_modules -x ".env*" ".github/*" "scripts/*" "src/test/*"
+        run: zip -r function.zip src package.json node_modules swagger.config.json -x ".env*" ".github/*" "src/test/*"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
