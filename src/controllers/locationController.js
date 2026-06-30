@@ -1,16 +1,5 @@
 const Location = require('../models/location.js');
-
-const isValidName = (name) => typeof name === 'string';
-
-const isValidGeolocation = (geolocation) => {
-  if (!Array.isArray(geolocation) || geolocation.length !== 2) return false;
-  const [lat, lon] = geolocation;
-  return typeof lat === 'number' && typeof lon === 'number';
-};
-
-const isValidLocation = (loc) => {
-  return isValidName(loc?.name) && isValidGeolocation(loc?.geolocation);
-};
+const { isValidName, isValidGeoRange } = require('../utils/validators');
 
 const getAll = async (req, res) => {
   try {
@@ -38,7 +27,13 @@ const create = async (req, res) => {
     const loc = req.body;
 
     if (!isValidLocation(loc)) {
-      return res.status(400).json({ error: 'Invalid or incomplete payload for creating location.' });
+      return res.status(400).json({ error: 'Invalid name: must be a non-empty string.' });
+    }
+
+     if (!isValidGeoRange(loc?.geolocation)) {
+      return res.status(400).json({ 
+        error: 'Invalid geolocation: latitude must be between -90 and 90, longitude between -180 and 180.' 
+      });
     }
 
     const newLocation = new Location({
@@ -70,14 +65,14 @@ const update = async (req, res) => {
 
     if(name) {
       if(!isValidName(name)){
-        return res.status(400).json({ error: 'Invalid or incomplete payload for updating location.' });
+        return res.status(400).json({ error: 'Invalid name: must be a non-empty string.' });
       }
       updateData.name = name;
     }
 
     if(geolocation){
-      if(!isValidGeolocation(geolocation)) {
-        return res.status(400).json({ error: 'Invalid or incomplete payload for creating location.' });
+      if(!isValidGeoRange(geolocation)) {
+        return res.status(400).json({ error: 'Invalid geolocation: latitude must be between -90 and 90, longitude between -180 and 180.' });
       }
       updateData.geolocation = geolocation;
     }
