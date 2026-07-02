@@ -1,5 +1,7 @@
 const Actor = require("../models/actor.js");
-const isValidName = (name) => typeof name === "string";
+
+const { isValidName } = require("../utils/validators");
+
 const isValidTag = (tagId) => typeof tagId === "string";
 const isValidArticleIds = (ids) =>
   Array.isArray(ids) && ids.every((id) => typeof id === "string");
@@ -35,7 +37,7 @@ const create = async (req, res) => {
     const actor = req.body;
 
     if (!isValidActor(actor)) {
-      return res.status(400).json({ error: "Invalid or incomplete payload for creating actor." });
+      return res.status(400).json({ error: "Invalid name: must be a non-empty string." });
     }
 
     const newActorData = { name: actor.name };

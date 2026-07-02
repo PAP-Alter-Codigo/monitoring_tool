@@ -1,5 +1,6 @@
 const dynamoose = require("dynamoose");
 const { v4: uuidv4 } = require("uuid");
+const { isValidGeoRange } = require("../utils/validators");
 
 const locationSchema = new dynamoose.Schema({
   id: {
@@ -15,11 +16,11 @@ const locationSchema = new dynamoose.Schema({
     type: Array,
     schema: [Number],
     required: true,
-    validate: (val) => val.length === 2
+    validate: (val) => isValidGeoRange(val), // Validate that the geolocation is within valid range
   }
 });
 
-const isProd = process.env.IS_PRODUCTION || true;
+const isProd = process.env.IS_PRODUCTION === "true";
 
 const Location = dynamoose.model("Locations", locationSchema, {
   create: !isProd,
