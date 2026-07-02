@@ -1,9 +1,7 @@
 const Article = require('../models/article.js');
 const Location = require('../models/location.js');
 const Tag = require('../models/tag.js');
-
-// Se usa en POST (create)
-const isValidPublicationDate = (date) => typeof date === 'string';
+const { isValidDate } = require('../utils/validators');
 
 const isValidSourceName = (name) => typeof name === 'string';
 const isValidPaywall = (paywall) => typeof paywall === 'boolean';
@@ -21,7 +19,7 @@ const isValidLocation = (location) => Array.isArray(location) && location.every(
 
 const validateArticlePayload = (article) => {
   if (!article) return 'Article payload is missing.';
-  if (!isValidPublicationDate(article.publicationDate)) return 'Invalid publicationDate.';
+  if (!isValidDate(article.publicationDate)) return 'Invalid publicationDate.';
   if (!isValidSourceName(article.sourceName)) return 'Invalid sourceName.';
   if (!isValidPaywall(article.paywall)) return 'Invalid paywall.';
   if (!isValidHeadline(article.headline)) return 'Invalid headline.';
@@ -122,7 +120,7 @@ const update = async (req, res) => {
     const updateData = {}
 
     if (publicationDate) {
-      if(!isValidPublicationDate(publicationDate)) {
+      if(!isValidDate(publicationDate)) {
         return res.status(400).json({ error: 'Invalid publicationDate.' });
       }
       updateData.publicationDate = publicationDate;
@@ -257,7 +255,7 @@ const resolveTagIds = async (tagNames) => {
 
 const validateMunninPayload = (article) => {
   if (!article) return 'Article payload is missing.';
-  if (!isValidPublicationDate(article.publicationDate)) return 'Invalid publicationDate.';
+  if (!isValidDate(article.publicationDate)) return 'Invalid publicationDate.';
   if (!isValidSourceName(article.sourceName)) return 'Invalid sourceName.';
   if (!isValidHeadline(article.headline)) return 'Invalid headline.';
   if (!isValidUrl(article.url)) return 'Invalid url.';

@@ -23,12 +23,17 @@ router.use('/auth', devAuthRoutes); // dev routes
 // Munnin routes bypass global middleware (auth handled internally)
 router.use('/articles', munninRoutes);
 
-//MIDDLEWARE
 router.use((req, res, next) => {
   if (req.headers['x-api-key']) {
     return apiKeyAuth(req, res, next);
   }
   return authJwtCookie(req, res, next);
+});
+
+router.get('/me', (req, res) => {
+  const email = req.user?.email ? String(req.user.email).toLowerCase() : null;
+  const isAdmin = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email);
+  res.json({ user: req.user, isAdmin });
 });
 
 router.use(
