@@ -1,6 +1,10 @@
 const Location = require('../models/location.js');
 const { isValidName, isValidGeoRange } = require('../utils/validators');
 
+const isValidLocation = (loc) => {
+  return isValidName(loc?.name) && isValidGeoRange(loc?.geolocation);
+};
+
 const getAll = async (req, res) => {
   try {
     const locations = await Location.scan().exec();

@@ -9,7 +9,7 @@ describe('Article - Unit Testing', () => {
   let req, res, sandbox;
   const mockArticle = {
     id: "abc101",
-    publicationDate: "2024-12-10",
+    publicationDate: "10/12/2024",
     sourceName: "La Jornada",
     paywall: false,
     headline: "Comunidades denuncian afectaciones por termoeléctrica en Juanacatlán",
@@ -67,7 +67,7 @@ describe('Article - Unit Testing', () => {
 
   it('should create a new article', async () => {
     req.body = {
-      publicationDate: "2024-12-10",
+      publicationDate: "10/12/2024",
       sourceName: "La Jornada",
       paywall: false,
       headline: "Comunidades denuncian afectaciones por termoeléctrica en Juanacatlán",
@@ -93,7 +93,7 @@ describe('Article - Unit Testing', () => {
   it('should return 400 if source is missing', async () => {
     req.body = {
       id: 100,
-      publicationDate: "2024-01-01",
+      publicationDate: "01/01/2024",
       actorsMentioned: [],
       tags: [],
       location: 0
@@ -119,7 +119,7 @@ describe('Article - Unit Testing', () => {
   it('should update an article', async () => {
     req.params = { id: 'abc101' };
     req.body = {
-      publicationDate: "2024-12-10",
+      publicationDate: "10/12/2024",
       sourceName: "Actualizado",
       paywall: true,
       headline: "Minería amenaza patrimonio natural en Wirikuta",
@@ -139,7 +139,7 @@ describe('Article - Unit Testing', () => {
   it('should return 404 if not found', async () => {
     req.params = { id: 'notFound' };
     req.body = {
-      publicationDate: "2025-01-01",
+      publicationDate: "01/01/2025",
       sourceName: "Proceso",
       paywall: true,
       headline: "Minería amenaza patrimonio natural en Wirikuta",
@@ -188,6 +188,7 @@ describe('Article - Unit Testing', () => {
     it('should return 500 on database error in create', async () => {
       const bodyArticle = {
         ...mockArticle,
+        publicationDate: "10/12/2024",
         location: ['20']
       };
       req.body = bodyArticle;

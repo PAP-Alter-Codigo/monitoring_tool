@@ -101,7 +101,7 @@ describe('Routes Integration Tests', () => {
     it('should return all articles', async () => {
       const mockArticles = [{
         id: '1',
-        publicationDate: '2024-01-01',
+        publicationDate: '01/01/2024',
         sourceName: 'Test Source',
         paywall: false,
         headline: 'Test Headline',
@@ -131,7 +131,7 @@ describe('Routes Integration Tests', () => {
       const res = await request(app)
         .post('/articles')
         .send({
-          publicationDate: '2024-01-01',
+          publicationDate: '01/01/2024',
           sourceName: 'Test',
           paywall: false,
           headline: 'Test',
@@ -154,7 +154,7 @@ describe('Routes Integration Tests', () => {
       const res = await request(app)
         .post('/articles')
         .send({
-          publicationDate: '2024-01-01',
+          publicationDate: '01/01/2024',
           sourceName: 'Test',
           paywall: false,
           headline: 'Test',
