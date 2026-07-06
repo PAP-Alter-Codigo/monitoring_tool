@@ -112,11 +112,19 @@ router.put('/:id', tagsController.update);
  *         description: Tag ID
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: force
+ *         required: false
+ *         description: Force delete even if referenced by articles (leaves orphaned references)
+ *         schema:
+ *           type: boolean
  *     responses:
  *       '200':
  *         description: Tag successfully deleted
  *       '404':
  *         description: Tag not found
+ *       '409':
+ *         description: Conflict - tag is referenced by articles
  *       '500':
  *         description: Internal server error
  */
