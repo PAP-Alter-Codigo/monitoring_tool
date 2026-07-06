@@ -14,7 +14,7 @@ const isValidActorsMentioned = (actors) => Array.isArray(actors);
 
 const isValidTags = (tags) => Array.isArray(tags);
 
-const isValidLocation = (location) => Array.isArray(location) && location.every(id => typeof id === 'string');
+const isValidLocations = (location) => Array.isArray(location) && location.every(id => typeof id === 'string');
 
 
 const validateArticlePayload = (article) => {
@@ -28,7 +28,7 @@ const validateArticlePayload = (article) => {
   if (!isValidCoverageLevel(article.coverageLevel)) return 'Invalid coverageLevel.';
   if (!isValidActorsMentioned(article.actorsMentioned)) return 'Invalid actorsMentioned.';
   if (!isValidTags(article.tags)) return 'Invalid tags.';
-  if (article.location !== undefined && !isValidLocation(article.location)) return 'Invalid location.';
+  if (article.location !== undefined && !isValidLocations(article.location)) return 'Invalid location.';
   return null;
 };
 
@@ -183,7 +183,7 @@ const update = async (req, res) => {
     }
 
     if (location !== undefined) {
-      if (!isValidLocation(location)) {
+      if (!isValidLocations(location)) {
         return res.status(400).json({ error: 'Invalid location. Must be an array of strings.' });
       }
       updateData.location = location;

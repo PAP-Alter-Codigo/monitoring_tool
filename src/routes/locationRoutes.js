@@ -126,11 +126,19 @@ router.put('/:id', locationsController.update);
  *         description: Location ID
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: force
+ *         required: false
+ *         description: Force delete even if referenced by articles (leaves orphaned references)
+ *         schema:
+ *           type: boolean
  *     responses:
  *       '200':
  *         description: Location successfully deleted
  *       '404':
  *         description: Location not found
+ *       '409':
+ *         description: Conflict - location is referenced by articles
  *       '500':
  *         description: Internal server error
  */

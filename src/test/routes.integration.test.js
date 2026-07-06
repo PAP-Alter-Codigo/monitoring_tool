@@ -87,12 +87,48 @@ describe('Routes Integration Tests', () => {
   });
 
   describe('DELETE /actors/:id', () => {
-    it('should delete an actor', async () => {
+    it('should delete an actor when not referenced', async () => {
       sandbox.stub(Actor, 'get').resolves({ id: '1', name: 'Test' });
+      sandbox.stub(Article, 'scan').returns({
+        exec: sandbox.stub().resolves([])
+      });
       sandbox.stub(Actor, 'delete').resolves();
 
       const res = await request(app).delete('/actors/1');
       expect(res.status).to.equal(200);
+    });
+
+    it('should return 409 when actor is referenced', async () => {
+      sandbox.stub(Actor, 'get').resolves({ id: '1', name: 'Test' });
+      sandbox.stub(Article, 'scan').returns({
+        exec: sandbox.stub().resolves([
+          { id: 'art1', actorsMentioned: [{ S: '1' }] },
+          { id: 'art2', actorsMentioned: [{ S: '1' }] }
+        ])
+      });
+      const deleteStub = sandbox.stub(Actor, 'delete').resolves();
+
+      const res = await request(app).delete('/actors/1');
+      expect(res.status).to.equal(409);
+      expect(res.body).to.deep.equal({
+        error: 'Cannot delete actor because it is referenced by 2 articles.',
+        references: 2
+      });
+      expect(deleteStub.called).to.be.false;
+    });
+
+    it('should delete actor when forced even if referenced', async () => {
+      sandbox.stub(Actor, 'get').resolves({ id: '1', name: 'Test' });
+      const scanStub = sandbox.stub(Article, 'scan').returns({
+        exec: sandbox.stub().resolves([
+          { id: 'art1', actorsMentioned: [{ S: '1' }] }
+        ])
+      });
+      sandbox.stub(Actor, 'delete').resolves();
+
+      const res = await request(app).delete('/actors/1?force=true');
+      expect(res.status).to.equal(200);
+      expect(scanStub.called).to.be.true;
     });
   });
 
@@ -202,6 +238,51 @@ describe('Routes Integration Tests', () => {
     });
   });
 
+  describe('DELETE /locations/:id', () => {
+    it('should delete a location when not referenced', async () => {
+      sandbox.stub(Location, 'get').resolves({ id: '1', name: 'Test' });
+      sandbox.stub(Article, 'scan').returns({
+        exec: sandbox.stub().resolves([])
+      });
+      sandbox.stub(Location, 'delete').resolves();
+
+      const res = await request(app).delete('/locations/1');
+      expect(res.status).to.equal(200);
+    });
+
+    it('should return 409 when location is referenced', async () => {
+      sandbox.stub(Location, 'get').resolves({ id: '1', name: 'Test' });
+      sandbox.stub(Article, 'scan').returns({
+        exec: sandbox.stub().resolves([
+          { id: 'art1', location: [{ S: '1' }] }
+        ])
+      });
+      const deleteStub = sandbox.stub(Location, 'delete').resolves();
+
+      const res = await request(app).delete('/locations/1');
+      expect(res.status).to.equal(409);
+      expect(res.body).to.deep.equal({
+        error: 'Cannot delete location because it is referenced by 1 articles.',
+        references: 1
+      });
+      expect(deleteStub.called).to.be.false;
+    });
+
+    it('should delete location when forced even if referenced', async () => {
+      sandbox.stub(Location, 'get').resolves({ id: '1', name: 'Test' });
+      const scanStub = sandbox.stub(Article, 'scan').returns({
+        exec: sandbox.stub().resolves([
+          { id: 'art1', location: [{ S: '1' }] }
+        ])
+      });
+      sandbox.stub(Location, 'delete').resolves();
+
+      const res = await request(app).delete('/locations/1?force=true');
+      expect(res.status).to.equal(200);
+      expect(scanStub.called).to.be.true;
+    });
+  });
+
   // Tag Routes
   describe('GET /tags', () => {
     it('should return all tags', async () => {
@@ -248,12 +329,49 @@ describe('Routes Integration Tests', () => {
   });
 
   describe('DELETE /tags/:id', () => {
-    it('should delete a tag', async () => {
+    it('should delete a tag when not referenced', async () => {
       sandbox.stub(Tag, 'get').resolves({ id: '1', name: 'Test' });
+      sandbox.stub(Article, 'scan').returns({
+        exec: sandbox.stub().resolves([])
+      });
       sandbox.stub(Tag, 'delete').resolves();
 
       const res = await request(app).delete('/tags/1');
       expect(res.status).to.equal(200);
+    });
+
+    it('should return 409 when tag is referenced', async () => {
+      sandbox.stub(Tag, 'get').resolves({ id: '1', name: 'Test' });
+      sandbox.stub(Article, 'scan').returns({
+        exec: sandbox.stub().resolves([
+          { id: 'art1', tags: [{ S: '1' }] },
+          { id: 'art2', tags: [{ S: '1' }] },
+          { id: 'art3', tags: [{ S: '1' }] }
+        ])
+      });
+      const deleteStub = sandbox.stub(Tag, 'delete').resolves();
+
+      const res = await request(app).delete('/tags/1');
+      expect(res.status).to.equal(409);
+      expect(res.body).to.deep.equal({
+        error: 'Cannot delete tag because it is referenced by 3 articles.',
+        references: 3
+      });
+      expect(deleteStub.called).to.be.false;
+    });
+
+    it('should delete tag when forced even if referenced', async () => {
+      sandbox.stub(Tag, 'get').resolves({ id: '1', name: 'Test' });
+      const scanStub = sandbox.stub(Article, 'scan').returns({
+        exec: sandbox.stub().resolves([
+          { id: 'art1', tags: [{ S: '1' }] }
+        ])
+      });
+      sandbox.stub(Tag, 'delete').resolves();
+
+      const res = await request(app).delete('/tags/1?force=true');
+      expect(res.status).to.equal(200);
+      expect(scanStub.called).to.be.true;
     });
   });
 });

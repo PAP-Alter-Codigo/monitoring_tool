@@ -1,7 +1,8 @@
 const Location = require('../models/location.js');
 const { isValidName, isValidGeoRange } = require('../utils/validators');
+const referenceChecker = require('../utils/referenceChecker.js');
 
-const isValidLocation = (loc) => {
+const isValidLocationes = (loc) => {
   return isValidName(loc?.name) && isValidGeoRange(loc?.geolocation);
 };
 
@@ -30,13 +31,13 @@ const create = async (req, res) => {
   try {
     const loc = req.body;
 
-    if (!isValidLocation(loc)) {
+    if (!isValidLocationes(loc)) {
       return res.status(400).json({ error: 'Invalid name: must be a non-empty string.' });
     }
 
-     if (!isValidGeoRange(loc?.geolocation)) {
-      return res.status(400).json({ 
-        error: 'Invalid geolocation: latitude must be between -90 and 90, longitude between -180 and 180.' 
+    if (!isValidGeoRange(loc?.geolocation)) {
+      return res.status(400).json({
+        error: 'Invalid geolocation: latitude must be between -90 and 90, longitude between -180 and 180.'
       });
     }
 
@@ -44,7 +45,7 @@ const create = async (req, res) => {
       name: loc.name,
       geolocation: loc.geolocation
     });
-    
+
     await newLocation.save();
     res.status(201).json({ message: 'Location successfully created.' });
   } catch (error) {
@@ -56,10 +57,10 @@ const create = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  try { 
+  try {
     const { id } = req.params;
     const { name, geolocation } = req.body;
-    
+
     const existing = await Location.get({ id: id });
     if (!existing) {
       return res.status(404).json({ error: `Location with ID ${id} not found.` });
@@ -67,15 +68,15 @@ const update = async (req, res) => {
 
     const updateData = {};
 
-    if(name) {
-      if(!isValidName(name)){
+    if (name) {
+      if (!isValidName(name)) {
         return res.status(400).json({ error: 'Invalid name: must be a non-empty string.' });
       }
       updateData.name = name;
     }
 
-    if(geolocation){
-      if(!isValidGeoRange(geolocation)) {
+    if (geolocation) {
+      if (!isValidGeoRange(geolocation)) {
         return res.status(400).json({ error: 'Invalid geolocation: latitude must be between -90 and 90, longitude between -180 and 180.' });
       }
       updateData.geolocation = geolocation;
@@ -95,10 +96,29 @@ const update = async (req, res) => {
 const remove = async (req, res) => {
   try {
     const { id } = req.params;
-    
+    // If force is true, we bypass the referential integrity check.
+    // WARNING: Force deletion will leave orphaned references in Article records.
+    const force = req.query?.force === 'true';
+
     const existing = await Location.get({ id: id });
     if (!existing) {
       return res.status(404).json({ error: `Location with ID ${id} not found.` });
+    }
+
+    let references = 0;
+    if (!force) {
+      references = await referenceChecker.countReferences('location', id);
+      if (references > 0) {
+        return res.status(409).json({
+          error: `Cannot delete location because it is referenced by ${references} articles.`,
+          references: references
+        });
+      }
+    } else {
+      references = await referenceChecker.countReferences('location', id);
+      if (references > 0) {
+        console.warn(`[AUDIT] Location with ID "${id}" ("${existing.name}") was FORCE deleted. This left ${references} orphaned references in Articles.`);
+      }
     }
 
     await Location.delete({ id: id });
