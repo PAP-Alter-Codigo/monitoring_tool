@@ -119,7 +119,7 @@ describe('Article - Unit Testing', () => {
   it('should update an article', async () => {
     req.params = { id: 'abc101' };
     req.body = {
-      publicationDate: "11/12/2024",
+      publicationDate: "2024-12-10",
       sourceName: "Actualizado",
       paywall: true,
       headline: "Minería amenaza patrimonio natural en Wirikuta",
@@ -139,7 +139,7 @@ describe('Article - Unit Testing', () => {
   it('should return 404 if not found', async () => {
     req.params = { id: 'notFound' };
     req.body = {
-      publicationDate: "2025-01-01",
+      publicationDate: "01/01/2025",
       sourceName: "Proceso",
       paywall: true,
       headline: "Minería amenaza patrimonio natural en Wirikuta",
@@ -188,6 +188,7 @@ describe('Article - Unit Testing', () => {
     it('should return 500 on database error in create', async () => {
       const bodyArticle = {
         ...mockArticle,
+        publicationDate: "10/12/2024",
         location: ['20']
       };
       req.body = bodyArticle;
