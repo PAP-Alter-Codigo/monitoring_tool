@@ -3,6 +3,7 @@ const expect = chai.expect;
 const sinon = require('sinon');
 const LocationController = require('../controllers/locationController');
 const Location = require('../models/location');
+const referenceChecker = require('../utils/referenceChecker.js');
 
 describe('Location Controller Unit Test', () => {
   let sandbox;
@@ -75,13 +76,42 @@ describe('Location Controller Unit Test', () => {
     expect(res.status.calledWith(404)).to.be.true;
   });
 
-  it('should delete a location', async () => {
+  it('should delete a location when not referenced', async () => {
     req.params = { id: 'abc123' };
+    req.query = {};
     sandbox.stub(Location, 'get').resolves(fakeLocation);
+    sandbox.stub(referenceChecker, 'countReferences').resolves(0);
     sandbox.stub(Location, 'delete').resolves();
     await LocationController.remove(req, res);
     expect(res.status.calledWith(200)).to.be.true;
     expect(res.json.calledWithMatch({ message: 'Location successfully deleted.' })).to.be.true;
+  });
+
+  it('should not delete a location and return 409 when referenced', async () => {
+    req.params = { id: 'abc123' };
+    req.query = {};
+    sandbox.stub(Location, 'get').resolves(fakeLocation);
+    sandbox.stub(referenceChecker, 'countReferences').resolves(3);
+    const deleteStub = sandbox.stub(Location, 'delete').resolves();
+    await LocationController.remove(req, res);
+    expect(res.status.calledWith(409)).to.be.true;
+    expect(res.json.calledWithMatch({
+      error: 'Cannot delete location because it is referenced by 3 articles.',
+      references: 3
+    })).to.be.true;
+    expect(deleteStub.called).to.be.false;
+  });
+
+  it('should delete a location and bypass check when force is true even if referenced', async () => {
+    req.params = { id: 'abc123' };
+    req.query = { force: 'true' };
+    sandbox.stub(Location, 'get').resolves(fakeLocation);
+    const countStub = sandbox.stub(referenceChecker, 'countReferences');
+    sandbox.stub(Location, 'delete').resolves();
+    await LocationController.remove(req, res);
+    expect(res.status.calledWith(200)).to.be.true;
+    expect(res.json.calledWithMatch({ message: 'Location successfully deleted.' })).to.be.true;
+    expect(countStub.called).to.be.true;
   });
 
   it('should return 404 on delete if not found', async () => {
@@ -124,6 +154,7 @@ describe('Location Controller Unit Test', () => {
   it('should return 500 on database error in delete', async () => {
     req.params = { id: 'abc123' };
     sandbox.stub(Location, 'get').resolves(fakeLocation);
+    sandbox.stub(referenceChecker, 'countReferences').resolves(0);
     sandbox.stub(Location, 'delete').rejects(new Error('Database error'));
     await LocationController.remove(req, res);
     expect(res.status.calledWith(500)).to.be.true;
