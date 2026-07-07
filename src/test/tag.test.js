@@ -3,6 +3,7 @@ const expect = chai.expect;
 const sinon = require('sinon');
 const TagController = require('../controllers/tagController.js');
 const Tag = require('../models/tag.js');
+const referenceChecker = require('../utils/referenceChecker.js');
 
 describe('Tag Controller Unit Test', function() {
   let sandbox;
@@ -56,13 +57,42 @@ describe('Tag Controller Unit Test', function() {
     expect(res.json.calledWithMatch({ message: 'Tag successfully updated.' })).to.be.true;
   });
 
-  it('should delete a tag', async function() {
+  it('should delete a tag when not referenced', async function() {
     req.params = { id: '123' };
+    req.query = {};
     sandbox.stub(Tag, 'get').resolves(fakeTag);
+    sandbox.stub(referenceChecker, 'countReferences').resolves(0);
     sandbox.stub(Tag, 'delete').resolves();
     await TagController.remove(req, res);
     expect(res.status.calledWith(200)).to.be.true;
     expect(res.json.calledWithMatch({ message: 'Tag successfully deleted.' })).to.be.true;
+  });
+
+  it('should not delete a tag and return 409 when referenced', async function() {
+    req.params = { id: '123' };
+    req.query = {};
+    sandbox.stub(Tag, 'get').resolves(fakeTag);
+    sandbox.stub(referenceChecker, 'countReferences').resolves(5);
+    const deleteStub = sandbox.stub(Tag, 'delete').resolves();
+    await TagController.remove(req, res);
+    expect(res.status.calledWith(409)).to.be.true;
+    expect(res.json.calledWithMatch({
+      error: 'Cannot delete tag because it is referenced by 5 articles.',
+      references: 5
+    })).to.be.true;
+    expect(deleteStub.called).to.be.false;
+  });
+
+  it('should delete a tag and bypass check when force is true even if referenced', async function() {
+    req.params = { id: '123' };
+    req.query = { force: 'true' };
+    sandbox.stub(Tag, 'get').resolves(fakeTag);
+    const countStub = sandbox.stub(referenceChecker, 'countReferences');
+    sandbox.stub(Tag, 'delete').resolves();
+    await TagController.remove(req, res);
+    expect(res.status.calledWith(200)).to.be.true;
+    expect(res.json.calledWithMatch({ message: 'Tag successfully deleted.' })).to.be.true;
+    expect(countStub.called).to.be.true;
   });
 
   // Priority 2: Missing 404 tests
@@ -158,6 +188,7 @@ describe('Tag Controller Unit Test', function() {
   it('should return 500 on database error in delete', async function() {
     req.params = { id: '123' };
     sandbox.stub(Tag, 'get').resolves(fakeTag);
+    sandbox.stub(referenceChecker, 'countReferences').resolves(0);
     sandbox.stub(Tag, 'delete').rejects(new Error('Database error'));
     await TagController.remove(req, res);
     expect(res.status.calledWith(500)).to.be.true;

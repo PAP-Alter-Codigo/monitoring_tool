@@ -125,11 +125,19 @@ router.put('/:id', actorsController.update);
  *        description: Actor ID
  *        schema:
  *          type: string
+ *      - in: query
+ *        name: force
+ *        required: false
+ *        description: Force delete even if referenced by articles (leaves orphaned references)
+ *        schema:
+ *          type: boolean
  *    responses: 
  *      '200':
  *       description: Actor successfully deleted
  *      '404':
  *       description: Actor not found
+ *      '409':
+ *       description: Conflict - actor is referenced by articles
  *      '500': 
  *       description: Internal server error
  */

@@ -1,6 +1,6 @@
 const Actor = require("../models/actor.js");
-
 const { isValidName } = require("../utils/validators");
+const referenceChecker = require('../utils/referenceChecker.js');
 
 const isValidTag = (tagId) => typeof tagId === "string";
 const isValidArticleIds = (ids) =>
@@ -105,10 +105,29 @@ const update = async (req, res) => {
 const remove = async (req, res) => {
   try {
     const { id } = req.params;
+    // If force is true, we bypass the referential integrity check.
+    // WARNING: Force deletion will leave orphaned references in Article records.
+    const force = req.query?.force === 'true';
 
     const existing = await Actor.get({ id });
     if (!existing) {
       return res.status(404).json({ error: `Actor with ID ${id} not found.` });
+    }
+
+    let references = 0;
+    if (!force) {
+      references = await referenceChecker.countReferences('actorsMentioned', id);
+      if (references > 0) {
+        return res.status(409).json({
+          error: `Cannot delete actor because it is referenced by ${references} articles.`,
+          references: references
+        });
+      }
+    } else {
+      references = await referenceChecker.countReferences('actorsMentioned', id);
+      if (references > 0) {
+        console.warn(`[AUDIT] Actor with ID "${id}" ("${existing.name}") was FORCE deleted. This left ${references} orphaned references in Articles.`);
+      }
     }
 
     await Actor.delete({ id });
