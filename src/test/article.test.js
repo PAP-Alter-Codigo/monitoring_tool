@@ -119,7 +119,7 @@ describe('Article - Unit Testing', () => {
   it('should update an article', async () => {
     req.params = { id: 'abc101' };
     req.body = {
-      publicationDate: "2024-12-10",
+      publicationDate: "10/12/2024",
       sourceName: "Actualizado",
       paywall: true,
       headline: "Minería amenaza patrimonio natural en Wirikuta",
