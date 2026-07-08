@@ -231,11 +231,15 @@ const resolveLocationIds = async (locationNames) => {
       Location.scan('name').eq(formatName(name)).exec()
     )
   );
-  locationNames.forEach(({ name }, i) => {
-    if (!results[i] || results[i].length === 0) {
-      console.warn(`[muninn] Location not found in DB — skipped: "${name}" (normalized: "${formatName(name)}")`);
-    }
-  });
+
+  const notFound = locationNames
+    .filter(({ name }, i) => !results[i] || results[i].length === 0)
+    .map(({ name }) => name);
+
+  if (notFound.length > 0) {
+    throw new Error(`UNRESOLVED_LOCATIONS:${notFound.join(',')}`);
+  }
+
   return results.flat().map(l => l.id);
 };
 
@@ -245,11 +249,15 @@ const resolveTagIds = async (tagNames) => {
       Tag.scan('name').eq(formatName(name)).exec()
     )
   );
-  tagNames.forEach(({ name }, i) => {
-    if (!results[i] || results[i].length === 0) {
-      console.warn(`[muninn] Tag not found in DB — skipped: "${name}" (normalized: "${formatName(name)}")`);
-    }
-  });
+
+  const notFound = tagNames
+    .filter(({ name }, i) => !results[i] || results[i].length === 0)
+    .map(({ name }) => name);
+
+  if (notFound.length > 0) {
+    throw new Error(`UNRESOLVED_TAGS:${notFound.join(',')}`);
+  }
+
   return results.flat().map(t => t.id);
 };
 
@@ -301,6 +309,18 @@ const createFromMunnin = async (req, res) => {
     await newArticle.save();
     res.status(201).json({ message: 'Article successfully created.' });
   } catch (error) {
+    if (error.message.startsWith('UNRESOLVED_LOCATIONS:')) {
+      const names = error.message.replace('UNRESOLVED_LOCATIONS:', '');
+      return res.status(422).json({
+        error: `The following locations could not be resolved: ${names}. Please verify the catalog is synchronized.`
+      });
+    }
+    if (error.message.startsWith('UNRESOLVED_TAGS:')) {
+      const names = error.message.replace('UNRESOLVED_TAGS:', '');
+      return res.status(422).json({
+        error: `The following tags could not be resolved: ${names}. Please verify the catalog is synchronized.`
+      });
+    }
     res.status(500).json({ error: error.message });
   }
 };

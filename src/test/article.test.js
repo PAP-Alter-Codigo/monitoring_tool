@@ -266,4 +266,62 @@ describe('Article - Unit Testing', () => {
       expect(res.status.calledWith(400)).to.be.true;
     });
 
+    it('should return 422 if location names cannot be resolved', async () => {
+      req.body = {
+        publicationDate: "10/12/2024",
+        sourceName: "La Jornada",
+        headline: "Nota de prueba",
+        url: "https://www.jornada.com.mx/nueva-nota",
+        author: "Laura Gómez",
+        coverageLevel: "regional",
+        location: [{ name: "Narnia" }],
+        tags: [{ name: "SEGURIDAD" }]
+      };
+
+  const execStubUrl = sandbox.stub().resolves([]);
+  const eqStubUrl = sandbox.stub().returns({ exec: execStubUrl });
+  sandbox.stub(Article, 'query').returns({ eq: eqStubUrl });
+
+  // Location no resuelve
+  const execStubLoc = sandbox.stub().resolves([]);
+  const eqStubLoc = sandbox.stub().returns({ exec: execStubLoc });
+  sandbox.stub(Location, 'scan').returns({ eq: eqStubLoc });
+
+  await articleController.createFromMunnin(req, res);
+  expect(res.status.calledWith(422)).to.be.true;
+  expect(res.json.getCall(0).args[0].error).to.include('Narnia');
+});
+
+it('should return 422 if tag names cannot be resolved', async () => {
+  req.body = {
+    publicationDate: "10/12/2024",
+    sourceName: "La Jornada",
+    headline: "Nota de prueba",
+    url: "https://www.jornada.com.mx/otra-nota",
+    author: "Laura Gómez",
+    coverageLevel: "regional",
+    location: [{ name: "Guadalajara" }],
+    tags: [{ name: "TagInexistente" }]
+  };
+
+  const execStubUrl = sandbox.stub().resolves([]);
+  const eqStubUrl = sandbox.stub().returns({ exec: execStubUrl });
+  sandbox.stub(Article, 'query').returns({ eq: eqStubUrl });
+
+  // Location resuelve
+  const execStubLoc = sandbox.stub().resolves([{ id: 'loc-1' }]);
+  const eqStubLoc = sandbox.stub().returns({ exec: execStubLoc });
+  sandbox.stub(Location, 'scan').returns({ eq: eqStubLoc });
+
+  // Tag no resuelve
+  const Tag = require('../models/tag');
+  const execStubTag = sandbox.stub().resolves([]);
+  const eqStubTag = sandbox.stub().returns({ exec: execStubTag });
+  sandbox.stub(Tag, 'scan').returns({ eq: eqStubTag });
+
+  await articleController.createFromMunnin(req, res);
+  expect(res.status.calledWith(422)).to.be.true;
+  expect(res.json.getCall(0).args[0].error).to.include('TagInexistente');
+});
+
 });
