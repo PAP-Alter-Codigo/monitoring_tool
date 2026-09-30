@@ -6,10 +6,6 @@ const isValidLocationes = (loc) => {
   return isValidName(loc?.name) && isValidGeoRange(loc?.geolocation);
 };
 
-const isValidLocation = (loc) => {
-  return isValidName(loc?.name) && isValidGeoRange(loc?.geolocation);
-};
-
 const getAll = async (req, res) => {
   try {
     const locations = await Location.scan().exec();

@@ -33,6 +33,31 @@ npm run dev
 # Production mode
 npm start
 ```
+#### Local DynamoDB Setup (Offline Development)
+
+You can run a local instance of DynamoDB and an administrative web UI using Docker, allowing you to develop and test without needing AWS credentials or an internet connection.
+
+#### Prerequisites
+- [Docker](https://www.docker.com/) and Docker Compose installed and running.
+
+#### A. Configure `.env`
+Enable local DynamoDB in your `.env` file:
+
+```env
+USE_LOCAL_DYNAMODB=true
+DYNAMODB_ENDPOINT=http://localhost:8000
+```
+
+#### B. Start DynamoDB Local
+Run the containers in the background:
+```bash
+docker compose -f docker-compose.dynamodb.yml up -d
+```
+
+#### C. Initialize Tables
+```bash
+node init-local-tables.js
+```
 
 ### 4. API Documentation
 Swagger documentation is available at: http://localhost:3000/api-docs

@@ -1,5 +1,6 @@
 const express = require("express");
 const { signAccessToken } = require("../utils/jwt");
+const { authJwtCookie } = require('../middlewares/authJwt');
 
 const router = express.Router();
 
@@ -48,6 +49,22 @@ router.post("/dev-logout", (req, res) => {
   });
 
   return res.status(200).json({ ok: true });
+});
+
+
+router.get("/admin", authJwtCookie, (req, res) => {
+  const adminEmails = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map(email => email.trim());
+
+  const user = req.user || {};
+  const isAdmin = adminEmails.includes(user.email);
+
+  res.json({
+    email: user.email,
+    name: user.name,
+    isAdmin
+  });
 });
 
 module.exports = router;
