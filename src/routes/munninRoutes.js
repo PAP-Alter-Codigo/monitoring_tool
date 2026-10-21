@@ -60,6 +60,12 @@ const { munninAuth } = require('../middlewares/munninAuth.js');
  *               summary:
  *                 type: string
  *                 nullable: true
+ *               relevance:
+ *                 type: string
+ *                 nullable: true
+ *               why:
+ *                 type: string
+ *                 nullable: true
  *     responses:
  *       '201':
  *         description: Article successfully created

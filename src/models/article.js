@@ -52,6 +52,12 @@ const articleSchema = new dynamoose.Schema({
   summary: {
     type: String,
   },
+  relevance: {
+    type: String,
+  },
+  why: {
+    type: String,
+  },
   origin: {
     type: String,
   },

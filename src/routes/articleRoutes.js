@@ -83,6 +83,12 @@ router.get('/:id', ensureAuthenticated, articlesController.getById);
  *               summary:
  *                 type: string
  *                 nullable: true
+ *               relevance:
+ *                 type: string
+ *                 nullable: true
+ *               why:
+ *                 type: string
+ *                 nullable: true
  *     responses:
  *       '201':
  *         description: Article successfully created (origin set to "user" automatically)
@@ -143,6 +149,12 @@ router.post('/', articlesController.create);
  *                   type: string
  *                 description: Array of Location IDs
  *               summary:
+ *                 type: string
+ *                 nullable: true
+ *               relevance:
+ *                 type: string
+ *                 nullable: true
+ *               why:
  *                 type: string
  *                 nullable: true
  *     responses:

@@ -98,6 +98,12 @@ const create = async (req, res) => {
       location: article.location || [],
       origin: 'user',
       ...(article.summary !== undefined && { summary: article.summary }),
+      ...((article.relevance ?? article.relevanceLevel ?? article.relevance_level) !== undefined && {
+        relevance: article.relevance ?? article.relevanceLevel ?? article.relevance_level
+      }),
+      ...((article.why ?? article.whyItMatters ?? article.why_it_matters) !== undefined && {
+        why: article.why ?? article.whyItMatters ?? article.why_it_matters
+      }),
     });
 
     await newArticle.save();
@@ -109,7 +115,7 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   const { id } = req.params;
-  const { publicationDate, sourceName, paywall, headline, url, author, coverageLevel, actorsMentioned, tags, location, summary } = req.body;
+  const { publicationDate, sourceName, paywall, headline, url, author, coverageLevel, actorsMentioned, tags, location, summary, relevance, why } = req.body;
 
   try {
     const existing = await Article.get({id});
@@ -194,6 +200,20 @@ const update = async (req, res) => {
         return res.status(400).json({ error: 'Invalid summary.' });
       }
       updateData.summary = summary;
+    }
+
+    if (relevance !== undefined) {
+      if (typeof relevance !== 'string') {
+        return res.status(400).json({ error: 'Invalid relevance.' });
+      }
+      updateData.relevance = relevance;
+    }
+
+    if (why !== undefined) {
+      if (typeof why !== 'string') {
+        return res.status(400).json({ error: 'Invalid why.' });
+      }
+      updateData.why = why;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -296,6 +316,12 @@ const createFromMunnin = async (req, res) => {
       location: locationIds,
       origin: 'muninn',
       ...(article.summary !== undefined && { summary: article.summary }),
+      ...((article.relevance ?? article.relevanceLevel ?? article.relevance_level) !== undefined && {
+        relevance: article.relevance ?? article.relevanceLevel ?? article.relevance_level
+      }),
+      ...((article.why ?? article.whyItMatters ?? article.why_it_matters) !== undefined && {
+        why: article.why ?? article.whyItMatters ?? article.why_it_matters
+      }),
     });
 
     await newArticle.save();
