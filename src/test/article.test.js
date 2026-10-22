@@ -266,4 +266,20 @@ describe('Article - Unit Testing', () => {
       expect(res.status.calledWith(400)).to.be.true;
     });
 
+    it('should return 400 for invalid relevance type in update', async () => {
+      req.params = { id: 'abc101' };
+      req.body = { relevance: 123 };
+      sandbox.stub(Article, 'get').resolves(mockArticle);
+      await articleController.update(req, res);
+      expect(res.status.calledWith(400)).to.be.true;
+    });
+
+    it('should return 400 for invalid why type in update', async () => {
+      req.params = { id: 'abc101' };
+      req.body = { why: 123 };
+      sandbox.stub(Article, 'get').resolves(mockArticle);
+      await articleController.update(req, res);
+      expect(res.status.calledWith(400)).to.be.true;
+    });
+
 });
