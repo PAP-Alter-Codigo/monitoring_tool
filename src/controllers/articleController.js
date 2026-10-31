@@ -55,45 +55,69 @@ const parseDate = (dateStr) => {
     return new Date(Number(year), Number(month) - 1, Number(day)).getTime() || 0;
 };
 
+/**
+ * Normalise a DD/MM/YYYY date string into a Date object for range comparisons.
+ * Returns null when the string is invalid.
+ */
+const parseDateToObj = (dateStr) => {
+    if (!dateStr || typeof dateStr !== 'string') return null;
+    const parts = dateStr.split('/');
+    if (parts.length !== 3) return null;
+    const [day, month, year] = parts;
+    const d = new Date(Number(year), Number(month) - 1, Number(day));
+    return isNaN(d.getTime()) ? null : d;
+};
+
+/**
+ * Build a deduped location map and return fully populated articles sorted newest-first.
+ * Shared by getAll and getFiltered.
+ */
+const buildPopulatedArticles = async (articles) => {
+    const uniqueLocIds = new Set();
+    for (const a of articles) {
+        const locList = a.location || [];
+        if (Array.isArray(locList)) {
+            for (const id of locList) {
+                if (id) uniqueLocIds.add(String(id));
+            }
+        }
+    }
+
+    const locationMap = new Map();
+    await Promise.all(
+        Array.from(uniqueLocIds).map(async (id) => {
+            try {
+                const loc = await Location.get({ id });
+                if (loc) {
+                    locationMap.set(id, { id: loc.id, name: loc.name, geolocation: loc.geolocation });
+                }
+            } catch {
+                // ignore individual fetch errors
+            }
+        })
+    );
+
+    const populated = Array.from(articles).map(article => {
+        const plain = JSON.parse(JSON.stringify(article));
+        const locationIds = Array.isArray(plain.location) ? plain.location : [];
+        plain.location = locationIds.map(id => locationMap.get(String(id))).filter(Boolean);
+        return plain;
+    });
+
+    populated.sort((a, b) => parseDate(b.publicationDate) - parseDate(a.publicationDate));
+    return populated;
+};
+
 const getAll = async (req, res) => {
     try {
         const articles = await Article.scan().exec();
+        const populated = await buildPopulatedArticles(articles);
 
-        // Collect only unique location IDs across all articles to avoid N+1 queries
-        const uniqueLocIds = new Set();
-        for (const a of articles) {
-            const locList = a.location || [];
-            if (Array.isArray(locList)) {
-                for (const id of locList) {
-                    if (id) uniqueLocIds.add(String(id));
-                }
-            }
-        }
+        // Optional limit query param (e.g. ?limit=3 for the home-page preview)
+        const limit = req.query?.limit ? parseInt(req.query.limit, 10) : null;
+        const result = (limit && limit > 0) ? populated.slice(0, limit) : populated;
 
-        // Fetch each unique location only once (only ~16 queries instead of 1,300+)
-        const locationMap = new Map();
-        await Promise.all(
-            Array.from(uniqueLocIds).map(async (id) => {
-                try {
-                    const loc = await Location.get({ id });
-                    if (loc) {
-                        locationMap.set(id, { id: loc.id, name: loc.name, geolocation: loc.geolocation });
-                    }
-                } catch {
-                    // ignore individual fetch errors
-                }
-            })
-        );
-
-        const populated = Array.from(articles).map(article => {
-            const plain = JSON.parse(JSON.stringify(article));
-            const locationIds = Array.isArray(plain.location) ? plain.location : [];
-            plain.location = locationIds.map(id => locationMap.get(String(id))).filter(Boolean);
-            return plain;
-        });
-
-        populated.sort((a, b) => parseDate(b.publicationDate) - parseDate(a.publicationDate));
-        res.status(200).json(populated);
+        res.status(200).json(result);
     } catch (error) {
         console.error('[getAll] Error:', error.message);
         res.status(500).json({ error: error.message });
@@ -112,6 +136,131 @@ const getById = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 }
+
+/**
+ * GET /articles/search
+ *
+ * Query parameters (all optional):
+ *   page            – 1-based page number (default 1)
+ *   limit           – items per page (default 20, max 100)
+ *   startDate       – ISO date string YYYY-MM-DD (inclusive lower bound)
+ *   endDate         – ISO date string YYYY-MM-DD (inclusive upper bound)
+ *   headline        – case-insensitive substring match
+ *   sourceName      – case-insensitive exact match
+ *   author          – case-insensitive exact match
+ *   coverageLevel   – case-insensitive substring match
+ *   paywall         – "true" | "false"
+ *   origin          – "user" | "muninn"
+ *   tags            – comma-separated tag IDs (OR logic)
+ *   actorsMentioned – comma-separated actor IDs (OR logic)
+ *   location        – location name substring (case-insensitive)
+ *   export          – "true" to return ALL matching articles without pagination
+ *
+ * Response (paginated): { total, page, limit, totalPages, articles }
+ * Response (export):    array of articles
+ */
+const getFiltered = async (req, res) => {
+    try {
+        const {
+            page: pageStr,
+            limit: limitStr,
+            startDate,
+            endDate,
+            headline,
+            sourceName,
+            author,
+            coverageLevel,
+            paywall,
+            origin,
+            tags: tagsParam,
+            actorsMentioned: actorsParam,
+            location: locationParam,
+            export: exportAll,
+        } = req.query;
+
+        const page = Math.max(1, parseInt(pageStr, 10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(limitStr, 10) || 20));
+
+        // Fetch & populate all articles
+        const rawArticles = await Article.scan().exec();
+        const populated = await buildPopulatedArticles(rawArticles);
+
+        // --- Parse filter params ---
+        const startDateObj  = startDate ? new Date(startDate + 'T00:00:00Z') : null;
+        const endDateObj    = endDate   ? new Date(endDate   + 'T23:59:59Z') : null;
+        const filterTags    = tagsParam   ? tagsParam.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
+        const filterActors  = actorsParam ? actorsParam.split(',').map(a => a.trim().toLowerCase()).filter(Boolean) : [];
+        const filterPaywall = (paywall !== undefined && paywall !== '') ? paywall === 'true' : null;
+        const filterOrigin  = origin ? origin.toLowerCase() : '';
+
+        const normalizeCoverage = (val) => {
+            if (!val) return '';
+            return val.split('/').map(p => p.trim().toLowerCase()).map(p => p.charAt(0).toUpperCase() + p.slice(1)).sort().join(' / ');
+        };
+
+        // --- Apply filters ---
+        const filtered = populated.filter(item => {
+            // Date range
+            const articleDate = parseDateToObj(item.publicationDate);
+            if (startDateObj && (!articleDate || articleDate < startDateObj)) return false;
+            if (endDateObj   && (!articleDate || articleDate > endDateObj))   return false;
+
+            // Text / enum filters
+            if (headline      && !(item.headline    || '').toLowerCase().includes(headline.toLowerCase()))     return false;
+            if (sourceName    && (item.sourceName   || '').toLowerCase() !== sourceName.toLowerCase())        return false;
+            if (author        && (item.author       || '').toLowerCase() !== author.toLowerCase())            return false;
+            if (coverageLevel && !normalizeCoverage(item.coverageLevel).toLowerCase().includes(coverageLevel.toLowerCase())) return false;
+            if (filterPaywall !== null && item.paywall !== filterPaywall) return false;
+            if (filterOrigin  && (item.origin || '').toLowerCase() !== filterOrigin) return false;
+
+            // Tags (OR): client sends tag IDs
+            if (filterTags.length > 0) {
+                const itemTagIds = Array.isArray(item.tags) ? item.tags.map(id => String(id).toLowerCase()) : [];
+                if (!filterTags.some(t => itemTagIds.includes(t))) return false;
+            }
+
+            // Actors (OR): client sends actor IDs
+            if (filterActors.length > 0) {
+                const itemActorIds = Array.isArray(item.actorsMentioned) ? item.actorsMentioned.map(id => String(id).toLowerCase()) : [];
+                if (!filterActors.some(a => itemActorIds.includes(a))) return false;
+            }
+
+            // Location: name-based substring match on populated location objects
+            if (locationParam) {
+                const locStr = Array.isArray(item.location)
+                    ? item.location.map(l => (l.name || '').toLowerCase()).join(', ')
+                    : '';
+                if (!locStr.includes(locationParam.toLowerCase())) return false;
+            }
+
+            return true;
+        });
+
+        // --- Export mode: return all matching articles without pagination ---
+        if (exportAll === 'true') {
+            return res.status(200).json(filtered);
+        }
+
+        // --- Paginate ---
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / limit) || 1;
+        const safePage = Math.min(page, totalPages);
+        const start = (safePage - 1) * limit;
+        const pageArticles = filtered.slice(start, start + limit);
+
+        res.status(200).json({
+            total,
+            page: safePage,
+            limit,
+            totalPages,
+            articles: pageArticles,
+        });
+    } catch (error) {
+        console.error('[getFiltered] Error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 const create = async (req, res) => {
     try {
         const article = req.body;
@@ -381,6 +530,7 @@ const createFromMunnin = async (req, res) => {
 module.exports = {
     getAll,
     getById,
+    getFiltered,
     create,
     update,
     remove,
