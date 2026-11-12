@@ -2,6 +2,14 @@ const Actor = require("../models/actor.js");
 const { isValidName } = require("../utils/validators");
 const referenceChecker = require('../utils/referenceChecker.js');
 
+const formatName = (name) =>
+  (name || '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/\s+/g, '_');
+
 const isValidTag = (tagId) => typeof tagId === "string";
 const isValidArticleIds = (ids) =>
   Array.isArray(ids) && ids.every((id) => typeof id === "string");
@@ -40,7 +48,7 @@ const create = async (req, res) => {
       return res.status(400).json({ error: "Invalid name: must be a non-empty string." });
     }
 
-    const newActorData = { name: actor.name };
+    const newActorData = { name: formatName(actor.name) };
     if (actor.tagId) newActorData.tagId = actor.tagId;
     if (actor.articleIds) newActorData.articleIds = actor.articleIds;
 
@@ -72,7 +80,7 @@ const update = async (req, res) => {
       if (!isValidName(name)) {
         return res.status(400).json({ error: "Invalid name value." });
       }
-      updateData.name = name;
+      updateData.name = formatName(name);
     }
 
     if (tagId) {
