@@ -1,6 +1,7 @@
 const Article = require('../models/article.js');
 const Location = require('../models/location.js');
 const Tag = require('../models/tag.js');
+const Actor = require('../models/actor.js');
 const { isValidDate } = require('../utils/validators');
 
 const isValidSourceName = (name) => typeof name === 'string' && name.trim().length > 0;
@@ -186,12 +187,38 @@ const getFiltered = async (req, res) => {
         const populated = await buildPopulatedArticles(rawArticles);
 
         // --- Parse filter params ---
-        const startDateObj  = startDate ? new Date(startDate + 'T00:00:00Z') : null;
-        const endDateObj    = endDate   ? new Date(endDate   + 'T23:59:59Z') : null;
-        const filterTags    = tagsParam   ? tagsParam.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
-        const filterActors  = actorsParam ? actorsParam.split(',').map(a => a.trim().toLowerCase()).filter(Boolean) : [];
+        const startDateObj = startDate ? new Date(startDate + 'T00:00:00Z') : null;
+        const endDateObj = endDate ? new Date(endDate + 'T23:59:59Z') : null;
+        const filterTags = tagsParam ? tagsParam.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
+        const filterActors = actorsParam ? actorsParam.split(',').map(a => a.trim().toLowerCase()).filter(Boolean) : [];
         const filterPaywall = (paywall !== undefined && paywall !== '') ? paywall === 'true' : null;
-        const filterOrigin  = origin ? origin.toLowerCase() : '';
+        const filterOrigin = origin ? origin.toLowerCase() : '';
+
+        // Map actor IDs <-> Names so filtering matches regardless of whether articles store IDs or raw names
+        const allDbActors = await Actor.scan().exec().catch(() => []);
+        const actorIdToName = new Map();
+        const actorNameToId = new Map();
+        allDbActors.forEach(a => {
+            if (a.id && a.name) {
+                const idStr = String(a.id).toLowerCase();
+                const rawName = String(a.name).toLowerCase();
+                const formattedName = formatName(a.name).toLowerCase();
+                actorIdToName.set(idStr, formattedName);
+                actorNameToId.set(rawName, idStr);
+                actorNameToId.set(formattedName, idStr);
+            }
+        });
+
+        const expandedFilterActors = new Set();
+        filterActors.forEach(val => {
+            const rawVal = val.toLowerCase();
+            const formattedVal = formatName(val).toLowerCase();
+            expandedFilterActors.add(rawVal);
+            expandedFilterActors.add(formattedVal);
+            if (actorIdToName.has(rawVal)) expandedFilterActors.add(actorIdToName.get(rawVal));
+            if (actorNameToId.has(rawVal)) expandedFilterActors.add(actorNameToId.get(rawVal));
+            if (actorNameToId.has(formattedVal)) expandedFilterActors.add(actorNameToId.get(formattedVal));
+        });
 
         const normalizeCoverage = (val) => {
             if (!val) return '';
@@ -203,15 +230,15 @@ const getFiltered = async (req, res) => {
             // Date range
             const articleDate = parseDateToObj(item.publicationDate);
             if (startDateObj && (!articleDate || articleDate < startDateObj)) return false;
-            if (endDateObj   && (!articleDate || articleDate > endDateObj))   return false;
+            if (endDateObj && (!articleDate || articleDate > endDateObj)) return false;
 
             // Text / enum filters
-            if (headline      && !(item.headline    || '').toLowerCase().includes(headline.toLowerCase()))     return false;
-            if (sourceName    && (item.sourceName   || '').toLowerCase() !== sourceName.toLowerCase())        return false;
-            if (author        && (item.author       || '').toLowerCase() !== author.toLowerCase())            return false;
+            if (headline && !(item.headline || '').toLowerCase().includes(headline.toLowerCase())) return false;
+            if (sourceName && (item.sourceName || '').toLowerCase() !== sourceName.toLowerCase()) return false;
+            if (author && (item.author || '').toLowerCase() !== author.toLowerCase()) return false;
             if (coverageLevel && !normalizeCoverage(item.coverageLevel).toLowerCase().includes(coverageLevel.toLowerCase())) return false;
             if (filterPaywall !== null && item.paywall !== filterPaywall) return false;
-            if (filterOrigin  && (item.origin || '').toLowerCase() !== filterOrigin) return false;
+            if (filterOrigin && (item.origin || '').toLowerCase() !== filterOrigin) return false;
 
             // Tags (OR): client sends tag IDs
             if (filterTags.length > 0) {
@@ -219,10 +246,10 @@ const getFiltered = async (req, res) => {
                 if (!filterTags.some(t => itemTagIds.includes(t))) return false;
             }
 
-            // Actors (OR): client sends actor IDs
-            if (filterActors.length > 0) {
+            // Actors (OR): client sends actor IDs or names
+            if (expandedFilterActors.size > 0) {
                 const itemActorIds = Array.isArray(item.actorsMentioned) ? item.actorsMentioned.map(id => String(id).toLowerCase()) : [];
-                if (!filterActors.some(a => itemActorIds.includes(a))) return false;
+                if (!itemActorIds.some(a => expandedFilterActors.has(a))) return false;
             }
 
             // Location: name-based substring match on populated location objects
@@ -433,7 +460,13 @@ const remove = async (req, res) => {
     }
 };
 
-const formatName = (name) => (name || '').trim().toUpperCase().replace(/ /g, '_');
+const formatName = (name) =>
+    (name || '')
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .replace(/\s+/g, '_');
 
 const resolveLocationIds = async (locationNames) => {
     const validNames = locationNames.filter(loc => loc && typeof loc.name === 'string' && loc.name.trim());
@@ -465,6 +498,29 @@ const resolveTagIds = async (tagNames) => {
     return results.flat().map(t => t.id);
 };
 
+const resolveActorIds = async (actorNames) => {
+    if (!Array.isArray(actorNames)) return [];
+    const validNames = actorNames.filter(name => typeof name === 'string' && name.trim());
+    const ids = [];
+    for (const rawName of validNames) {
+        const name = formatName(rawName);
+        try {
+            const existing = await Actor.scan('name').eq(name).exec();
+            if (existing && existing.length > 0) {
+                ids.push(existing[0].id);
+            } else {
+                const newActor = new Actor({ name });
+                await newActor.save();
+                ids.push(newActor.id);
+            }
+        } catch (err) {
+            console.warn(`[muninn] Could not resolve/create Actor "${name}":`, err.message);
+            ids.push(name);
+        }
+    }
+    return ids;
+};
+
 const validateMunninPayload = (article) => {
     if (!article) return 'Article payload is missing.';
     if (!isValidDate(article.publicationDate)) return 'Invalid publicationDate. Format must be DD/MM/YYYY.';
@@ -490,9 +546,10 @@ const createFromMunnin = async (req, res) => {
             return res.status(409).json({ error: `Article with URL ${article.url} already exists.` });
         }
 
-        const [locationIds, tagIds] = await Promise.all([
+        const [locationIds, tagIds, actorIds] = await Promise.all([
             resolveLocationIds(article.location),
             resolveTagIds(article.tags),
+            resolveActorIds(article.actors),
         ]);
 
         if (!tagIds || tagIds.length === 0) {
@@ -507,7 +564,7 @@ const createFromMunnin = async (req, res) => {
             url: article.url.trim(),
             author: (article.author || '').trim(),
             coverageLevel: article.coverageLevel || '',
-            actorsMentioned: [],
+            actorsMentioned: actorIds || [],
             tags: tagIds,
             location: locationIds || [],
             origin: 'muninn',
